@@ -22,7 +22,7 @@ const Signup = () => {
   const [pic, setPic] = useState();
   const [show, setShow] = useState(false);
   const [picLoading, setPicLoading] = useState(false);
-
+  let x;
   const handleClick = () => setShow(!show);
   const postDetails = (pics) => {
     setPicLoading(true);
@@ -68,6 +68,7 @@ const Signup = () => {
       return;
     }
   };
+
   const submitHandler = async () => {
     setPicLoading(true);
     if (!name || !email || !password || !confirmpassword) {
@@ -132,85 +133,145 @@ const Signup = () => {
       setPicLoading(false);
     }
   };
+
+  const validateEmail = () => {
+    var regxEmail =
+      /^([a-zA-Z0-9\.-]+)@([a-zA-Z0-9]+)\.([a-z]{2,5})(.[a-z]{2,5})?$/;
+    if (!regxEmail.test(email)) {
+      x = 0;
+      document.getElementById("invemail").innerHTML =
+        "Please enter email in proper format!!";
+      return false;
+    } else {
+      x = 1;
+      document.getElementById("invemail").innerHTML = "";
+      return true;
+    }
+  };
+
+  const validatePassword = () => {
+    var regexPass =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!regexPass.test(password)) {
+      x = 0;
+      document.getElementById("invpass").innerHTML =
+        "Minimum eight characters, at least one uppercase letter, one lowercase letter, one number and one special character!!";
+      return false;
+    } else {
+      x = 1;
+      document.getElementById("invpass").innerHTML = "";
+      return true;
+    }
+  };
+
+  const validate = () => {
+    if (x == 0) {
+      return false;
+    } else {
+      return true;
+    }
+  };
+
+  const validateCnfPassword = () => {
+    if (password !== confirmpassword) {
+      x = 0;
+      document.getElementById("invconfpass").style = "color:red";
+      document.getElementById("invconfpass").innerHTML = "Not Match password!!";
+      return false;
+    } else {
+      x = 1;
+      document.getElementById("invconfpass").innerHTML = "";
+      return true;
+    }
+  };
+
   return (
     <VStack spacing="5px">
-      <FormControl id="first-name" isRequired>
-        <FormLabel>Name</FormLabel>
-        <Input
-          placeholder="Enter Your Name"
-          onChange={(e) => {
-            setName(e.target.value);
-          }}
-        ></Input>
-      </FormControl>
-
-      <FormControl id="email" isRequired>
-        <FormLabel>Email</FormLabel>
-        <Input
-          placeholder="Enter Your Email"
-          onChange={(e) => {
-            setEmail(e.target.value);
-          }}
-        />
-      </FormControl>
-
-      <FormControl id="password" isRequired>
-        <FormLabel>Password</FormLabel>
-        <InputGroup>
+      <form style={{ width: "100%" }} onSubmit={validate()}>
+        <FormControl id="first-name" isRequired>
+          <FormLabel>Name</FormLabel>
           <Input
-            type={show ? "text" : "password"}
-            placeholder="Enter Your Password"
+            placeholder="Enter Your Name"
             onChange={(e) => {
-              setPassword(e.target.value);
+              setName(e.target.value);
+            }}
+          ></Input>
+        </FormControl>
+
+        <FormControl id="email" isRequired>
+          <FormLabel>Email</FormLabel>
+          <Input
+            placeholder="Enter Your Email"
+            onChange={(e) => {
+              setEmail(e.target.value);
+            }}
+            onKeyUp={validateEmail}
+          />
+          <span id="invemail" style={{ color: "red" }}></span>
+        </FormControl>
+
+        <FormControl id="password" isRequired>
+          <FormLabel>Password</FormLabel>
+          <InputGroup>
+            <Input
+              type={show ? "text" : "password"}
+              placeholder="Enter Your Password"
+              onChange={(e) => {
+                setPassword(e.target.value);
+              }}
+              onKeyUp={validatePassword}
+            />
+            <InputRightElement width="4.5rem">
+              <button h="1.75rem" size="sm" onClick={handleClick}>
+                {show ? "Hide" : "Show"}
+              </button>
+            </InputRightElement>
+          </InputGroup>
+          <span id="invpass" style={{ color: "red" }}></span>
+        </FormControl>
+
+        <FormControl id="password" isRequired>
+          <FormLabel>Confirm Password</FormLabel>
+          <InputGroup>
+            <Input
+              type={show ? "text" : "password"}
+              placeholder="Enter Your Password Again"
+              onChange={(e) => {
+                setConfirmpassword(e.target.value);
+              }}
+              onKeyUp={validateCnfPassword}
+            />
+            <InputRightElement width="4.5rem">
+              <button h="1.75rem" size="sm" onClick={handleClick}>
+                {show ? "Hide" : "Show"}
+              </button>
+            </InputRightElement>
+          </InputGroup>
+          <span id="invconfpass" style={{ color: "red" }}></span>
+        </FormControl>
+
+        <FormControl id="pic" isRequired>
+          <FormLabel>Upload Your Picture</FormLabel>
+          <Input
+            type="file"
+            p={1.5}
+            accept="image/*"
+            onChange={(e) => {
+              postDetails(e.target.files[0]);
             }}
           />
-          <InputRightElement width="4.5rem">
-            <button h="1.75rem" size="sm" onClick={handleClick}>
-              {show ? "Hide" : "Show"}
-            </button>
-          </InputRightElement>
-        </InputGroup>
-      </FormControl>
+        </FormControl>
 
-      <FormControl id="password" isRequired>
-        <FormLabel>Confirm Password</FormLabel>
-        <InputGroup>
-          <Input
-            type={show ? "text" : "password"}
-            placeholder="Enter Your Password Again"
-            onChange={(e) => {
-              setConfirmpassword(e.target.value);
-            }}
-          />
-          <InputRightElement width="4.5rem">
-            <button h="1.75rem" size="sm" onClick={handleClick}>
-              {show ? "Hide" : "Show"}
-            </button>
-          </InputRightElement>
-        </InputGroup>
-      </FormControl>
-
-      <FormControl id="pic" isRequired>
-        <FormLabel>Upload Your Picture</FormLabel>
-        <Input
-          type="file"
-          p={1.5}
-          accept="image/*"
-          onChange={(e) => {
-            postDetails(e.target.files[0]);
-          }}
-        />
-      </FormControl>
-
-      <Button
-        colorScheme="blue"
-        width="100%"
-        style={{ marginTop: 15 }}
-        onClick={submitHandler}
-        isLoading={picLoading}
-      >
-        Sign Up
-      </Button>
+        <Button
+          colorScheme="blue"
+          width="100%"
+          style={{ marginTop: 15 }}
+          onClick={submitHandler}
+          isLoading={picLoading}
+        >
+          Sign Up
+        </Button>
+      </form>
     </VStack>
   );
 };
