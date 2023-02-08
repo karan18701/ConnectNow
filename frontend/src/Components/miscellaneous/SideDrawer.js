@@ -52,6 +52,7 @@ function SideDrawer() {
 
   const logoutHandler = () => {
     localStorage.removeItem("userInfo");
+    localStorage.clear();
     history.push("/");
   };
 
