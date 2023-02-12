@@ -66,6 +66,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       );
       setMessages(data);
       // console.log("decrypt data ", data);
+
       setLoading(false);
 
       socket.emit("join chat", selectedChat._id);
