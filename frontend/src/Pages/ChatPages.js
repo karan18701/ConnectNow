@@ -8,6 +8,7 @@ import { useHistory } from "react-router-dom";
 
 const ChatPages = () => {
   // taking user state from context api
+  const history = useHistory();
   const { user, setUser } = ChatState();
   const [fetchAgain, setFetchAgain] = useState(false);
   useEffect(() => {
@@ -19,9 +20,7 @@ const ChatPages = () => {
     if (!userInfo) {
       history.push("/");
     }
-  }, [useHistory]);
-
-  const history = useHistory();
+  }, [history]);
 
   return (
     <div style={{ width: "100%" }}>

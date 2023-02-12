@@ -1,6 +1,7 @@
 import { Avatar } from "@chakra-ui/avatar";
 import { Tooltip } from "@chakra-ui/tooltip";
 import ScrollableFeed from "react-scrollable-feed";
+import CryptoJS from "crypto-js";
 import {
   isLastMessage,
   isNextOppoSender,
@@ -11,6 +12,13 @@ import { ChatState } from "../Context/ChatProvider";
 
 const ScrollableChat = ({ messages }) => {
   const { user } = ChatState();
+
+  const decryptMsg = (message) => {
+    return (message = CryptoJS.AES.decrypt(
+      message,
+      "my-secret-key@123"
+    ).toString(CryptoJS.enc.Utf8));
+  };
 
   return (
     <ScrollableFeed>
@@ -45,7 +53,7 @@ const ScrollableChat = ({ messages }) => {
                 maxWidth: "75%",
               }}
             >
-              {m.content}
+              {decryptMsg(m.content)}
             </span>
           </div>
         ))}

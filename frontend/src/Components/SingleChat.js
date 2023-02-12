@@ -11,6 +11,7 @@ import ProfileModal from "./miscellaneous/ProfileModal";
 import ScrollableChat from "./ScrollableChat";
 import Lottie from "react-lottie";
 import animationData from "../animations/typing.json";
+import CryptoJS from "crypto-js";
 
 import io from "socket.io-client";
 import UpdateGroupChatModal from "./miscellaneous/UpdateGroupChatModal";
@@ -26,8 +27,15 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const [socketConnected, setSocketConnected] = useState(false);
   const [typing, setTyping] = useState(false);
   const [istyping, setIsTyping] = useState(false);
-  const { selectedChat, setSelectedChat, user, notification, setNotification } =
-    ChatState();
+  const {
+    selectedChat,
+    setSelectedChat,
+    user,
+    notification,
+    setNotification,
+    newMsg,
+    setNewMsg,
+  } = ChatState();
 
   const toast = useToast();
 
@@ -57,6 +65,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         config
       );
       setMessages(data);
+      // console.log("decrypt data ", data);
       setLoading(false);
 
       socket.emit("join chat", selectedChat._id);
@@ -85,10 +94,14 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         };
 
         setNewMessage("");
+        const cipherText = CryptoJS.AES.encrypt(
+          newMessage,
+          "my-secret-key@123"
+        ).toString();
         const { data } = await axios.post(
           "/api/message",
           {
-            content: newMessage,
+            content: cipherText,
             chatId: selectedChat,
           },
           config
@@ -126,7 +139,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   useEffect(() => {
     socket.on("message recieved", (newMessageRecieved) => {
       // if we are in karan chat and sejal sent msg to hemang then that msg will not render in karan's chat but that will be displayed in notification
-
+      setNewMsg(true);
       if (
         // if chat is not selected or selected chat's id not eq to newmsg.chat's id then give it to notification
 
