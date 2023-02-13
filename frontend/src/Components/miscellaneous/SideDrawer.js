@@ -54,6 +54,7 @@ function SideDrawer() {
     localStorage.removeItem("userInfo");
     localStorage.clear();
     history.push("/");
+    window.location.reload();
   };
 
   const handleSearch = async () => {

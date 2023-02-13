@@ -16,10 +16,11 @@ const MyChats = ({ fetchAgain }) => {
   const { selectedChat, setSelectedChat, user, chats, setChats, newMsg } =
     ChatState();
   const [loggedUser, setLoggedUser] = useState();
-
+  // const chatSelect = selectedChat;
   const toast = useToast();
 
   const fetchChats = async () => {
+    // setSelectedChat(chatSelect);
     try {
       const config = {
         headers: {
@@ -43,9 +44,10 @@ const MyChats = ({ fetchAgain }) => {
   };
 
   // console.log("chats : ", selectedChat);
-  // useEffect(() => {
-  //   console.log("new msg bool: ", newMsg);
-  // }, [newMsg]);
+  useEffect(() => {
+    fetchChats();
+    // setSelectedChat(chatSelect);
+  }, [newMsg]);
   useEffect(() => {
     setLoggedUser(JSON.parse(localStorage.getItem("userInfo")));
     fetchChats();

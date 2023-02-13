@@ -29,7 +29,7 @@ const GroupChatModal = ({ children }) => {
 
   const toast = useToast();
 
-  const { user, chats, setChats } = ChatState();
+  const { user, chats, setChats, selectedChat } = ChatState();
 
   // to add selected users in group
   const handleGroup = (userToAdd) => {
@@ -62,7 +62,7 @@ const GroupChatModal = ({ children }) => {
         },
       };
       const { data } = await axios.get(`/api/user?search=${search}`, config);
-      console.log(data);
+      // console.log(data);
       setLoading(false);
       setSearchResult(data);
     } catch (error) {
@@ -165,7 +165,8 @@ const GroupChatModal = ({ children }) => {
               {selectedUsers.map((u) => (
                 <UserBadgeItem
                   key={u._id}
-                  user={u}
+                  user1={u}
+                  admin={user}
                   handleFunction={() => handleDelete(u)}
                 />
               ))}
@@ -176,7 +177,7 @@ const GroupChatModal = ({ children }) => {
               <div>Loading...</div>
             ) : (
               searchResult
-                ?.slice(0, 4)
+                ?.slice(0, 3)
                 .map((user) => (
                   <UserListItem
                     key={user._id}
