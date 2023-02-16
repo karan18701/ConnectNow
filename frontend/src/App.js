@@ -1,13 +1,21 @@
 import { Route } from "react-router-dom";
 import "./App.css";
+import ResetPassword from "./Pages/ResetPassword";
 import ChatPages from "./Pages/ChatPages";
 import HomePage from "./Pages/HomePage";
+import ResetPage from "./Pages/ResetPage";
 
 function App() {
   return (
     <div className="App">
       <Route path="/" component={HomePage} exact></Route>
-      <Route path="/chats" component={ChatPages}></Route>
+      <Route path="/chats" component={ChatPages} exact></Route>
+      <Route path="/reset" component={ResetPage} exact></Route>
+      <Route
+        path="/reset-password/:id/:token"
+        component={ResetPassword}
+        exact
+      ></Route>
     </div>
   );
 }

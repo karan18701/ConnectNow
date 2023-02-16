@@ -1,6 +1,9 @@
 const asyncHandler = require("express-async-handler");
 const generateToken = require("../config/generateToken");
 const User = require("../models/userModel");
+const nodemailer = require("nodemailer");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 // asyncHandler is used for handle any error that occurs in this controller
 const registerUser = asyncHandler(async (req, res) => {
@@ -36,7 +39,7 @@ const registerUser = asyncHandler(async (req, res) => {
       name: user.name,
       email: user.email,
       pic: user.pic,
-      token: generateToken(user._id),
+      token: generateToken.generateToken(user._id),
     });
   } else {
     throw new Error("Failed to create new User");
@@ -57,7 +60,7 @@ const authUser = asyncHandler(async (req, res) => {
       name: user.name,
       email: user.email,
       pic: user.pic,
-      token: generateToken(user._id),
+      token: generateToken.generateToken(user._id),
     });
   } else {
     res.status(401);
@@ -80,4 +83,103 @@ const allUsers = asyncHandler(async (req, res) => {
   const users = await User.find(keyword).find({ _id: { $ne: req.user._id } });
   res.send(users);
 });
-module.exports = { registerUser, authUser, allUsers };
+
+const sendMail = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  try {
+    const oldUser = await User.findOne({ email });
+    if (!oldUser) {
+      res.status(401);
+      throw new Error("User Not Exists!!");
+    }
+    const secret = process.env.JWT_SECRET + oldUser.password;
+    const token = generateToken.generateTokenForPass(
+      oldUser.email,
+      oldUser._id,
+      secret
+    );
+    const link = `http://localhost:3000/reset-password/${oldUser._id}/${token}`;
+    console.log("link : ", link);
+
+    var transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: "rahulpatelrahul1425@gmail.com",
+        pass: "pjbpfpecjtglnimj",
+      },
+    });
+
+    var mailOptions = {
+      from: "youremail@gmail.com",
+      to: oldUser.email,
+      subject: "Password Reset",
+      text: link,
+    };
+
+    transporter.sendMail(mailOptions, function (error, info) {
+      if (error) {
+        console.log(error);
+      } else {
+        console.log("Email sent: " + info.response);
+      }
+    });
+    // to do
+    res.status(200).json({ email: oldUser.email });
+  } catch (error) {
+    res.status(401);
+    throw new Error("Email not sent!!");
+  }
+});
+
+const updateUser = asyncHandler(async (req, res) => {
+  // const { id, token } = req.params;
+  const id = req.params.id;
+  const token = req.params.token;
+  const { password } = req.body;
+
+  console.log("id ", id);
+
+  const oldUser = await User.findOne({ _id: id });
+  if (!oldUser) {
+    return res.json({ status: "User Not Exists!!" });
+  }
+  const secret = process.env.JWT_SECRET + oldUser.password;
+
+  try {
+    const verify = jwt.verify(token, secret);
+    // console.log(verify);
+    // output
+    //    id: '63eb8ee931e8fdeb32cd2b94',
+    // email: 'kishantanakhiya@gmail.com',
+    // iat: 1676383739,
+    // exp: 1676384039
+
+    if (verify) {
+      const salt = await bcrypt.genSalt(10);
+      const encryptedPassword = await bcrypt.hash(password, salt);
+      try {
+        await User.updateOne(
+          {
+            _id: id,
+          },
+          {
+            $set: {
+              password: encryptedPassword,
+            },
+          }
+        );
+      } catch (error) {
+        res.status(401);
+        throw new Error("Password not updated!!");
+      }
+
+      res.send("verfied & updated");
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(401);
+    throw new Error("token is not verfied!!");
+  }
+});
+
+module.exports = { registerUser, authUser, allUsers, sendMail, updateUser };

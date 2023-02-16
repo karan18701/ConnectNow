@@ -21,10 +21,16 @@ const ChatProvider = ({ children }) => {
     //   fetching userinfo from local storage that is logged in or signed up
     const userInfo = JSON.parse(localStorage.getItem("userInfo"));
     setUser(userInfo);
-
+    const url = window.location.href.toString();
     //   if user not logged in then redirect to homepage
     if (!userInfo) {
-      history.push("/");
+      let pathName = url.split("/");
+      let path = pathName[3];
+      console.log(" path ", path);
+      if (path === "reset-password") {
+        path += "/" + pathName[4] + "/" + pathName[5];
+        history.push(`/${path}`);
+      } else history.push("/");
     }
   }, [history]);
   return (

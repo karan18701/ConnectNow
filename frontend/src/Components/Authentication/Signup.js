@@ -176,7 +176,7 @@ const Signup = () => {
     if (password !== confirmpassword) {
       x = 0;
       document.getElementById("invconfpass").style = "color:red";
-      document.getElementById("invconfpass").innerHTML = "Not Match password!!";
+      document.getElementById("invconfpass").innerHTML = "Passwords not match!";
       return false;
     } else {
       x = 1;
@@ -250,7 +250,7 @@ const Signup = () => {
           <span id="invconfpass" style={{ color: "red" }}></span>
         </FormControl>
 
-        <FormControl id="pic" isRequired>
+        <FormControl id="pic">
           <FormLabel>Upload Your Picture</FormLabel>
           <Input
             type="file"

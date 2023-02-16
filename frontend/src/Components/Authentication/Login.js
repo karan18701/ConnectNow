@@ -73,6 +73,10 @@ function Login() {
       setLoading(false);
     }
   };
+
+  const resetPass = () => {
+    history.push("/reset");
+  };
   return (
     <VStack spacing="5px">
       <FormControl id="email" isRequired>
@@ -111,6 +115,20 @@ function Login() {
         isLoading={loading}
       >
         Log In
+      </Button>
+      <Button
+        colorScheme="white"
+        // color="#3182ce"
+        color="#718096"
+        // color="#1a202c"
+        width="100%"
+        fontWeight={{ bold: 650 }}
+        style={{ marginTop: 15 }}
+        pl={{ base: 400, md: 350, sm: 270 }}
+        pr={{ base: 0, md: 0 }}
+        onClick={resetPass}
+      >
+        Forgot Password?
       </Button>
     </VStack>
   );
