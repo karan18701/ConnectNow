@@ -4,6 +4,7 @@ import ResetPassword from "./Pages/ResetPassword";
 import ChatPages from "./Pages/ChatPages";
 import HomePage from "./Pages/HomePage";
 import ResetPage from "./Pages/ResetPage";
+import VideoRoom from "./Components/videoRoom";
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         component={ResetPassword}
         exact
       ></Route>
+      <Route path="/video-call" component={VideoRoom}></Route>
     </div>
   );
 }

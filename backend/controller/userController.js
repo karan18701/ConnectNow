@@ -137,7 +137,7 @@ const updateUser = asyncHandler(async (req, res) => {
   const token = req.params.token;
   const { password } = req.body;
 
-  console.log("id ", id);
+  // console.log("id ", id);
 
   const oldUser = await User.findOne({ _id: id });
   if (!oldUser) {
@@ -182,4 +182,22 @@ const updateUser = asyncHandler(async (req, res) => {
   }
 });
 
-module.exports = { registerUser, authUser, allUsers, sendMail, updateUser };
+const getUser = asyncHandler(async (req, res) => {
+  // const { id } = req.params.uId;
+  const users = await User.findOne({ _id: req.params.uId });
+  // console.log("xxid ", users);
+  if (!users) {
+    return res.json({ status: "User Not Exists!!" });
+  } else {
+    return res.send(users);
+  }
+});
+
+module.exports = {
+  registerUser,
+  authUser,
+  allUsers,
+  sendMail,
+  updateUser,
+  getUser,
+};

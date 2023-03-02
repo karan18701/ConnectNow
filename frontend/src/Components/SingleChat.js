@@ -16,6 +16,8 @@ import CryptoJS from "crypto-js";
 import io from "socket.io-client";
 import UpdateGroupChatModal from "./miscellaneous/UpdateGroupChatModal";
 import { ChatState } from "../Context/ChatProvider";
+import { MdCall } from "react-icons/md";
+import { useHistory } from "react-router-dom";
 
 const ENDPOINT = "http://localhost:5000";
 var socket, selectedChatCompare;
@@ -38,6 +40,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   } = ChatState();
 
   const toast = useToast();
+  const history = useHistory();
 
   const defaultOptions = {
     loop: true,
@@ -184,6 +187,10 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     }, timerLength);
   };
 
+  const startVideoCall = () => {
+    history.push("/video-call");
+  };
+
   return (
     <>
       {selectedChat ? (
@@ -219,11 +226,22 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                 <>
                   {/* group name */}
                   {selectedChat.chatName.toUpperCase()}
-                  <UpdateGroupChatModal
-                    fetchMessages={fetchMessages}
-                    fetchAgain={fetchAgain}
-                    setFetchAgain={setFetchAgain}
-                  />
+                  <div style={{ display: "flex", flexDirection: "row" }}>
+                    <IconButton
+                      icon={<MdCall />}
+                      colorScheme="green"
+                      variant="solid"
+                      w={"8px"}
+                      mr={"10px"}
+                      onClick={startVideoCall}
+                    ></IconButton>
+
+                    <UpdateGroupChatModal
+                      fetchMessages={fetchMessages}
+                      fetchAgain={fetchAgain}
+                      setFetchAgain={setFetchAgain}
+                    />
+                  </div>
                 </>
               ))}
           </Text>
