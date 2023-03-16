@@ -5,6 +5,8 @@ import "./videoRoom.css";
 import AgoraRTC from "agora-rtc-sdk-ng";
 import { ChatState } from "../Context/ChatProvider";
 import axios from "axios";
+import { useHistory } from "react-router-dom";
+import AgoraRTM from "agora-signaling-sdk";
 
 let localTracks = [];
 let remoteUsers = {};
@@ -26,6 +28,7 @@ const VideoRoom = () => {
   const { selectedChat, user } = ChatState();
 
   const toast = useToast();
+  const history = useHistory();
 
   const uid = String(user._id);
   const APP_ID = "3fe5c987fb424efb8970f6e6c20fa471";
@@ -129,10 +132,10 @@ const VideoRoom = () => {
     // store user in remoteUsers list
     const uuu = await getUser(u.uid);
 
-    console.log(
-      "<<<<<<<<<<<<<<<<<<<<<<<<---------------->>>>>>>>>>>>>>",
-      uuu.name
-    );
+    // console.log(
+    //   "<<<<<<<<<<<<<<<<<<<<<<<<---------------->>>>>>>>>>>>>>",
+    //   uuu.name
+    // );
 
     remoteUsers[u.uid] = u;
     // remoteUsers
@@ -159,8 +162,8 @@ const VideoRoom = () => {
 
       document.getElementById(`user-container-${u.uid}`).appendChild(userName);
 
-      document.getElementById(`user-${u.uid}`).style.cssText =
-        "-moz-transform: scale(-1, 1); -webkit-transform: scale(-1, 1); -o-transform: scale(-1, 1); transform: scale(-1, 1); filter: FlipH;";
+      // document.getElementById(`user-${u.uid}`).style.cssText =
+      //   "-moz-transform: scale(-1, 1); -webkit-transform: scale(-1, 1); -o-transform: scale(-1, 1); transform: scale(-1, 1); filter: FlipH;";
     }
 
     // when someone is join when another user is focused so to change new user video
@@ -183,15 +186,10 @@ const VideoRoom = () => {
 
   const handleUserLeft = async (user) => {
     delete remoteUsers[user.uid];
-    console.log(
-      "<-------------------------user left------------------------------->"
-    );
+
     document.getElementById(`user-container-${user.uid}`).remove();
 
     if (userIdInDisplayFrame === `user-container-${user.uid}`) {
-      // console.log(
-      //   "<-------------------------user left------------------------------->"
-      // );
       displayFrame.style.display = null;
 
       let videoFrames = document.getElementsByClassName("video__container");
@@ -328,9 +326,12 @@ const VideoRoom = () => {
                  </div>`;
 
       displayFrame.insertAdjacentHTML("beforeend", String(player));
+      if (remoteUsers)
+        document.getElementById(`user-${uid}`).style.transform = "scaleX(-1)";
 
       userIdInDisplayFrame = `user-container-${uid}`;
       // in local video tracks we have only video track
+      // document.getElementById(`user-${uid}`).style.transform = "scaleX(-1)";
       localScreenTracks.play(`user-${uid}`);
 
       // unpublish local user only video
@@ -413,6 +414,22 @@ const VideoRoom = () => {
         position: "bottom-left",
       });
     }
+  };
+
+  const leaveChat = async () => {
+    for (let i = 0; localTracks.length > i; i++) {
+      localTracks[i].stop();
+      localTracks[i].close();
+    }
+
+    await client.unpublish([localTracks[0], localTracks[1]]);
+
+    if (localScreenTracks) {
+      await client.unpublish([localScreenTracks]);
+    }
+
+    document.getElementById(`user-container-${uid}`).remove();
+    history.push("/main");
   };
 
   return (
@@ -560,7 +577,7 @@ const VideoRoom = () => {
                   <path d="M0 1v17h24v-17h-24zm22 15h-20v-13h20v13zm-6.599 4l2.599 3h-12l2.599-3h6.802z" />
                 </svg>
               </button>
-              <button class="leave" id="leave-btn">
+              <button class="leave" id="leave-btn" onClick={leaveChat}>
                 {/* <!-- leave svg --> */}
                 <svg
                   xmlns="http://www.w3.org/2000/svg"

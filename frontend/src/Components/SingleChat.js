@@ -144,7 +144,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   useEffect(() => {
     socket.on("message recieved", (newMessageRecieved) => {
       // if we are in karan chat and sejal sent msg to hemang then that msg will not render in karan's chat but that will be displayed in notification
-      setNewMsg(true);
+      // setNewMsg(true);
       if (
         // if chat is not selected or selected chat's id not eq to newmsg.chat's id then give it to notification
 

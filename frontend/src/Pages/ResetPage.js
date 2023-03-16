@@ -23,7 +23,7 @@ const ResetPage = () => {
     history.push("/");
   };
 
-  const submitHandler = async () => {
+  const submitHandlerForPassword = async () => {
     setLoading(true);
     if (!email) {
       toast({
@@ -121,7 +121,7 @@ const ResetPage = () => {
             colorScheme="blue"
             width="80%"
             style={{ marginTop: 15 }}
-            onClick={submitHandler}
+            onClick={submitHandlerForPassword}
             cursor="pointer"
             // isDisabled={true}
           >

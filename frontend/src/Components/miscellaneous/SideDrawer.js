@@ -133,8 +133,8 @@ function SideDrawer() {
         alignItems="center"
         bg="white"
         w="100%"
-        p="5px 10px 5px 10px"
-        borderWidth="5px"
+        p="10px 10px 10px 10px"
+        borderWidth="1px"
       >
         <Tooltip label="Search Users to chat" hasArrow placement="bottom-end">
           <Button variant="ghost" onClick={onOpen}>
@@ -145,9 +145,9 @@ function SideDrawer() {
           </Button>
         </Tooltip>
 
-        <Text fontSize="2xl" fontFamily="Work sans">
-          RTC
-        </Text>
+        {/* <Text fontSize="2xl" fontFamily="Work sans">
+          ConnectNow
+        </Text> */}
 
         <div>
           <Menu>
@@ -181,19 +181,21 @@ function SideDrawer() {
           <Menu>
             <MenuButton as={Button} rightIcon={<ChevronDownIcon />}>
               {/* in avtar if user has not uploaded profile pic then user name will be printed using name field and user.name will be derive from ChatProvider and if prof pic is there then it will be shown using src  */}
+              {/* <ProfileModal user={user}> */}
               <Avatar
                 size="sm"
                 cursor="pointer"
                 name={user.name}
                 src={user.pic}
-              />
+              ></Avatar>
+              {/* </ProfileModal> */}
             </MenuButton>
             <MenuList>
               <ProfileModal user={user}>
-                <MenuItem>My Profile</MenuItem>{" "}
+                <MenuItem>My Profile</MenuItem>
               </ProfileModal>
-              <MenuDivider />
-              <MenuItem onClick={logoutHandler}>Logout</MenuItem>
+              {/* <MenuDivider /> */}
+              {/* <MenuItem onClick={logoutHandler}>Logout</MenuItem> */}
             </MenuList>
           </Menu>
         </div>

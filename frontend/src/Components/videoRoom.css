@@ -101,6 +101,7 @@
 
 .video-player video {
   border-radius: 50%;
+  transform: scaleX(-1);
 }
 
 #stream__box {

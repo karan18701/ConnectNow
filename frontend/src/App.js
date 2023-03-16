@@ -5,6 +5,7 @@ import ChatPages from "./Pages/ChatPages";
 import HomePage from "./Pages/HomePage";
 import ResetPage from "./Pages/ResetPage";
 import VideoRoom from "./Components/videoRoom";
+import MainPage from "./Pages/MainPage";
 
 function App() {
   return (
@@ -12,6 +13,8 @@ function App() {
       <Route path="/" component={HomePage} exact></Route>
       <Route path="/chats" component={ChatPages} exact></Route>
       <Route path="/reset" component={ResetPage} exact></Route>
+      <Route path="/main" component={MainPage} exact></Route>
+
       <Route
         path="/reset-password/:id/:token"
         component={ResetPassword}

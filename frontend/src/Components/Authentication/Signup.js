@@ -155,7 +155,7 @@ const Signup = () => {
     if (!regexPass.test(password)) {
       x = 0;
       document.getElementById("invpass").innerHTML =
-        "Minimum eight characters, at least one uppercase letter, one lowercase letter, one number and one special character!!";
+        "Password must be atleast 8 characters, including uppercase letter,lowercase letter,number,special character!!";
       return false;
     } else {
       x = 1;
@@ -175,7 +175,6 @@ const Signup = () => {
   const validateCnfPassword = () => {
     if (password !== confirmpassword) {
       x = 0;
-      document.getElementById("invconfpass").style = "color:red";
       document.getElementById("invconfpass").innerHTML = "Passwords not match!";
       return false;
     } else {
@@ -207,7 +206,7 @@ const Signup = () => {
             }}
             onKeyUp={validateEmail}
           />
-          <span id="invemail" style={{ color: "red" }}></span>
+          <span id="invemail" style={{ color: "red", fontSize: "12px" }}></span>
         </FormControl>
 
         <FormControl id="password" isRequired>
@@ -227,7 +226,7 @@ const Signup = () => {
               </button>
             </InputRightElement>
           </InputGroup>
-          <span id="invpass" style={{ color: "red" }}></span>
+          <span id="invpass" style={{ color: "red", fontSize: "12px" }}></span>
         </FormControl>
 
         <FormControl id="password" isRequired>
@@ -247,7 +246,10 @@ const Signup = () => {
               </button>
             </InputRightElement>
           </InputGroup>
-          <span id="invconfpass" style={{ color: "red" }}></span>
+          <span
+            id="invconfpass"
+            style={{ color: "red", fontSize: "12px" }}
+          ></span>
         </FormControl>
 
         <FormControl id="pic">

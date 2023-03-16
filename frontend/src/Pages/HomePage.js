@@ -25,7 +25,7 @@ function HomePage() {
 
     //   if user logged in then redirect to chatpage
     if (user) {
-      history.push("/chats");
+      history.push("/main");
     }
   }, [history]);
 

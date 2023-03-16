@@ -131,7 +131,7 @@ const sendMail = asyncHandler(async (req, res) => {
   }
 });
 
-const updateUser = asyncHandler(async (req, res) => {
+const resetUserPassWord = asyncHandler(async (req, res) => {
   // const { id, token } = req.params;
   const id = req.params.id;
   const token = req.params.token;
@@ -176,9 +176,83 @@ const updateUser = asyncHandler(async (req, res) => {
       res.send("verfied & updated");
     }
   } catch (error) {
-    console.log(error);
+    // console.log(error);
     res.status(401);
     throw new Error("token is not verfied!!");
+  }
+});
+
+const updateUser = asyncHandler(async (req, res) => {
+  const { name, pic, id } = req.body;
+
+  const oldUser = await User.findOne({ _id: id });
+  if (!oldUser) {
+    return res.json({ status: "User Not Exists!!" });
+  }
+
+  try {
+    await User.updateOne(
+      {
+        _id: id,
+      },
+      {
+        $set: {
+          name: name,
+          pic: pic,
+        },
+      }
+    );
+    const newUser = await User.findOne({ _id: id });
+    res.status(201).json({
+      _id: newUser._id,
+      name: newUser.name,
+      email: newUser.email,
+      pic: newUser.pic,
+      token: generateToken.generateToken(newUser._id),
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(401);
+    throw new Error("Not updated!!");
+  }
+});
+
+const deleteProfilePicture = asyncHandler(async (req, res) => {
+  const { id } = req.body;
+
+  const oldUser = await User.findOne({ _id: id });
+  if (!oldUser) {
+    return res.json({ status: "User Not Exists!!" });
+  }
+
+  if (oldUser.pic) {
+    try {
+      await User.updateOne(
+        {
+          _id: id,
+        },
+        {
+          $unset: {
+            pic: "",
+          },
+        }
+      );
+      const newUser = await User.findOne({ _id: id });
+      res.status(201).json({
+        _id: newUser._id,
+        name: newUser.name,
+        email: newUser.email,
+        // pic: newUser.pic,
+        token: generateToken.generateToken(newUser._id),
+      });
+    } catch (error) {
+      console.log(error);
+      res.status(401);
+      throw new Error("Not Deleted!!");
+    }
+  } else {
+    res.status(401);
+    throw new Error("No Profile Picture!!");
   }
 });
 
@@ -193,11 +267,56 @@ const getUser = asyncHandler(async (req, res) => {
   }
 });
 
+const verifyPassword = asyncHandler(async (req, res) => {
+  const { id, password } = req.params;
+  const user = await User.findOne({ id });
+  if (!(user && (await user.matchPassword(password)))) {
+    // res.status(401);
+
+    // throw new Error("Old Password is not correct!!");
+    return res.send(false);
+    // res.json({ status: "Old Password is not correct!!" });
+  } else {
+    return res.send(true);
+  }
+});
+
+const updatePassword = asyncHandler(async (req, res) => {
+  const { id, newPassword } = req.body;
+  console.log("pasword", newPassword);
+  const oldUser = await User.findOne({ _id: id });
+  if (!oldUser) {
+    return res.json({ status: "User Not Exists!!" });
+  }
+  const salt = await bcrypt.genSalt(10);
+  const encryptedPassword = await bcrypt.hash(newPassword, salt);
+  try {
+    await User.updateOne(
+      {
+        _id: id,
+      },
+      {
+        $set: {
+          password: encryptedPassword,
+        },
+      }
+    );
+    res.send("verfied & updated");
+  } catch (error) {
+    res.status(401);
+    throw new Error("Password not updated!!");
+  }
+});
+
 module.exports = {
   registerUser,
   authUser,
   allUsers,
   sendMail,
+  resetUserPassWord,
   updateUser,
   getUser,
+  deleteProfilePicture,
+  verifyPassword,
+  updatePassword,
 };
