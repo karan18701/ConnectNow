@@ -264,3 +264,32 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #797a79;
 }
+
+.green__icon {
+  display: block;
+  height: 8px;
+  width: 8px;
+  border-radius: 50%;
+  background-color: #2aca3e;
+}
+
+.message__body__bot {
+  margin-top: 25px;
+  padding: 0 20px;
+  max-width: 900px;
+  color: #bdbdbd;
+}
+
+.message__author__bot {
+  margin-right: 10px;
+  color: #4c6ed5 !important;
+}
+
+.message__body {
+  margin-top: 20px;
+  border-radius: 10px;
+  padding: 10px 15px;
+  width: fit-content;
+  max-width: 900px;
+  background-color: #bee3f8;
+}

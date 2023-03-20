@@ -13,6 +13,7 @@
     "@testing-library/user-event": "^13.5.0",
     "agora-rtc-sdk": "^3.6.11",
     "agora-rtc-sdk-ng": "^4.16.1",
+    "agora-rtm-sdk": "^1.6.0-205",
     "agora-signaling-sdk": "^1.4.0",
     "axios": "^1.2.3",
     "babel-runtime": "^6.26.0",

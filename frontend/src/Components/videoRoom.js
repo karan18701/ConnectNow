@@ -1,18 +1,31 @@
 import React from "react";
-import { Box, Text, Button, useToast } from "@chakra-ui/react";
+import {
+  Box,
+  Text,
+  Button,
+  useToast,
+  Heading,
+  Flex,
+  HStack,
+  Input,
+  FormControl,
+} from "@chakra-ui/react";
 import { useState, useEffect } from "react";
 import "./videoRoom.css";
 import AgoraRTC from "agora-rtc-sdk-ng";
 import { ChatState } from "../Context/ChatProvider";
 import axios from "axios";
 import { useHistory } from "react-router-dom";
-import AgoraRTM from "agora-signaling-sdk";
+import AgoraRTM from "agora-rtm-sdk";
 
 let localTracks = [];
 let remoteUsers = {};
 let localScreenTracks;
 let sharingScreen = false;
 let client;
+
+let rtmClient;
+let channel;
 
 const VideoRoom = () => {
   const [showChat, setShowChat] = useState(true);
@@ -42,6 +55,7 @@ const VideoRoom = () => {
   // gives htmlcollection
   let videoFrames = document.getElementsByClassName("video__container");
   let videoBox = document.getElementById("videoBox");
+  let messageForm = document.getElementById("message__form");
 
   // console.log(videoFrames);
   let userIdInDisplayFrame = null;
@@ -122,9 +136,21 @@ const VideoRoom = () => {
 
     videoBox.style.paddingTop = "20px";
 
-    for (let i = 0; videoFrames.length > i; i++) {
-      videoFrames[i].style.height = "300px";
-      videoFrames[i].style.width = "300px";
+    if (
+      (!isParticipantsClose && isChatsClose) ||
+      (isParticipantsClose && !isChatsClose)
+    ) {
+      for (let i = 0; videoFrames.length > i; i++) {
+        videoFrames[i].style.height = "200px";
+        videoFrames[i].style.width = "200px";
+      }
+    }
+
+    if (isParticipantsClose && isChatsClose) {
+      for (let i = 0; videoFrames.length > i; i++) {
+        videoFrames[i].style.height = "300px";
+        videoFrames[i].style.width = "300px";
+      }
     }
   };
 
@@ -248,6 +274,20 @@ const VideoRoom = () => {
   };
 
   const joinRoomInit = async () => {
+    rtmClient = await AgoraRTM.createInstance(APP_ID);
+    await rtmClient.login({ uid, token: null });
+
+    await rtmClient.addOrUpdateLocalUserAttributes({ name: user.name });
+
+    channel = await rtmClient.createChannel(options.roomId);
+    await channel.join();
+
+    channel.on("MemberJoined", handleMemberJoined);
+    channel.on("MemberLeft", handleMemberLeft);
+    channel.on("ChannelMessage", handleChannelMessage);
+
+    getMembers();
+    addBotMessageToDom(`${user.name} joined the room`);
     // create a client and join the client to the particular roomId
     client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
 
@@ -270,6 +310,155 @@ const VideoRoom = () => {
   useEffect(() => {
     callExpandVideo();
   }, [localPeople]);
+
+  let getMembers = async () => {
+    let members = await channel.getMembers();
+    updateMemberTotal(members);
+    for (let i = 0; members.length > i; i++) {
+      addMemberToDom(members[i]);
+    }
+  };
+
+  let handleMemberJoined = async (MemberId) => {
+    console.log("new member joind", MemberId);
+    addMemberToDom(MemberId);
+    let members = await channel.getMembers();
+    updateMemberTotal(members);
+
+    let { name } = await rtmClient.getUserAttributesByKeys(MemberId, ["name"]);
+    addBotMessageToDom(` ${name} joined the room!`);
+  };
+
+  let addMemberToDom = async (MemberId) => {
+    let { name } = await rtmClient.getUserAttributesByKeys(MemberId, ["name"]);
+
+    let membersWrapper = document.getElementById("member__list");
+    let memberItem = `<div class="member__wrapper" id="member__${MemberId}__wrapper" style="display: flex; align-items: center;">
+                        <span class="green__icon" ></span>
+                        <p class="member_name"  style="margin-left: 25px;">${name}</p>
+                    </div>`;
+
+    membersWrapper.insertAdjacentHTML("beforeend", memberItem);
+  };
+
+  let updateMemberTotal = async (members) => {
+    let total = document.getElementById("members__count");
+    total.innerText = members.length;
+  };
+
+  let handleMemberLeft = async (MemberId) => {
+    removeMemberFromDom(MemberId);
+    let members = await channel.getMembers();
+    updateMemberTotal(members);
+  };
+
+  let removeMemberFromDom = async (MemberId) => {
+    let memberWrapper = document.getElementById(`member__${MemberId}__wrapper`);
+    memberWrapper.remove();
+
+    let name =
+      memberWrapper.getElementsByClassName("member_name")[0].textContent;
+    addBotMessageToDom(`${name} has left the room.`);
+
+    // agora rtm actually leave user after 30sec to solve this create leavechannel fn
+  };
+
+  let leaveChannel = async () => {
+    await channel.leave();
+    await rtmClient.logout();
+  };
+
+  let handleChannelMessage = async (messageData, MemberId) => {
+    console.log("A new message was received");
+    let data = JSON.parse(messageData.text);
+
+    if (data.type === "chat") {
+      addMessageToDom(data.displayName, data.message);
+    }
+
+    if (data.type === "user_left") {
+      document.getElementById(`user-container-${data.uid}`).remove();
+
+      if (userIdInDisplayFrame === `user-container-${uid}`) {
+        displayFrame.style.display = null;
+
+        for (let i = 0; videoFrames.length > i; i++) {
+          videoFrames[i].style.height = "300px";
+          videoFrames[i].style.width = "300px";
+        }
+      }
+    }
+
+    // if (data.type === "user_left") {
+    //   document.getElementById(`user-container-${data.uid}`).remove();
+
+    //   if (userIdInDisplayFrame === `user-container-${uid}`) {
+    //     displayFrame.style.display = null;
+
+    //     for (let i = 0; videoFrames.length > i; i++) {
+    //       videoFrames[i].style.height = "300px";
+    //       videoFrames[i].style.width = "300px";
+    //     }
+    //   }
+    // }
+  };
+
+  let sendMessage = async (e) => {
+    e.preventDefault();
+
+    let message = e.target.message.value;
+    channel.sendMessage({
+      text: JSON.stringify({
+        type: "chat",
+        message: message,
+        displayName: user.name,
+      }),
+    });
+    addMessageToDom(user.name, message);
+    e.target.reset();
+  };
+
+  let addMessageToDom = (name, message) => {
+    let messagesWrapper = document.getElementById("messages");
+
+    let newMessage = `<div class="message__wrapper">
+                        <div class="message__body">
+                            <strong class="message__author" style="font-weight: 600;">${name}</strong>
+                            <p class="message__text">${message}</p>
+                        </div>
+                    </div>`;
+
+    messagesWrapper.insertAdjacentHTML("beforeend", newMessage);
+
+    let lastMessage = document.querySelector(
+      "#messages .message__wrapper:last-child"
+    );
+    if (lastMessage) {
+      lastMessage.scrollIntoView();
+    }
+  };
+
+  let addBotMessageToDom = (botMessage) => {
+    let messagesWrapper = document.getElementById("messages");
+
+    let newMessage = `<div class="message__wrapper">
+                        <div class="message__body__bot">
+                            <strong class="message__author__bot">🤖 ConnectNow Bot</strong>
+                            <p class="message__text__bot">${botMessage}</p>
+                        </div>
+                    </div>`;
+
+    messagesWrapper.insertAdjacentHTML("beforeend", newMessage);
+
+    let lastMessage = document.querySelector(
+      "#messages .message__wrapper:last-child"
+    );
+    if (lastMessage) {
+      lastMessage.scrollIntoView();
+    }
+  };
+
+  window.addEventListener("beforeunload", leaveChannel);
 
   const toggleCamerea = async () => {
     let button = document.getElementById("camera-btn");
@@ -416,7 +605,8 @@ const VideoRoom = () => {
     }
   };
 
-  const leaveChat = async () => {
+  const leaveChat = async (e) => {
+    e.preventDefault();
     for (let i = 0; localTracks.length > i; i++) {
       localTracks[i].stop();
       localTracks[i].close();
@@ -429,7 +619,21 @@ const VideoRoom = () => {
     }
 
     document.getElementById(`user-container-${uid}`).remove();
+
+    if (userIdInDisplayFrame === `user-container-${uid}`) {
+      displayFrame.style.display = null;
+
+      for (let i = 0; videoFrames.length > i; i++) {
+        videoFrames[i].style.height = "300px";
+        videoFrames[i].style.width = "300px";
+      }
+    }
+    channel.sendMessage({
+      text: JSON.stringify({ type: "user_left", uid: uid }),
+    });
+    leaveChannel();
     history.push("/main");
+    window.location.reload();
   };
 
   return (
@@ -485,36 +689,87 @@ const VideoRoom = () => {
         </Button>
       </Box>
 
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        w="100%"
-        h="92vh"
-        // pt="10px"
-        // pb="0px"
-      >
+      <Box display="flex" justifyContent="space-between" w="100%" h="92vh">
         <Box
-          bg="gray.200"
+          bg="gray.100"
           flexBasis={showParticipants ? "250px" : "0"}
-          //   flex={showParticipants ? 1 : 0}
-          //   maxW="250px"
-          //   minW="100px"
-          //   display={showParticipants ? "block" : "none"}
-
-          style={{
-            display: {
-              base: `${showParticipants ? "block" : "none"}`,
-              md: "none",
-            },
-            padding: `${showParticipants ? "16px" : "0px"}`,
-            md: "0px",
-          }}
-          //   p={4}
-          // borderLeftRadius={showParticipants ? "lg" : "0px"}
+          overflowY="scroll"
+          // style={{
+          //   display: {
+          //     base: `${showParticipants ? "block" : "none"}`,
+          //     md: "none",
+          //   },
+          //   padding: `${showParticipants ? "16px" : "0px"}`,
+          //   md: "0px",
+          // }}
           borderWidth={showParticipants ? "1px" : "0px"}
+          // p={4}
+          // pt={0}
+          display={showParticipants ? "flex" : "none"}
+          maxW="350px"
+          height={"665px"}
+          flexDirection={"column"}
         >
-          {/* Participants Partition */}
-          {showParticipants && <Text>Participants Partition</Text>}
+          {
+            <section id="members__container">
+              <Box
+                id="members__header"
+                fontSize="18px !important"
+                fontWeight="medium"
+                // display={showParticipants ? "block" : "none"}
+                direction={"column"}
+                justifyContent="center"
+                h={"50px"}
+                display="flex"
+                p={2}
+                pl={"auto"}
+                pr={"auto"}
+                bg={"#e2e8f0"}
+              >
+                <HStack>
+                  <Box>{"Participants"}</Box>
+                  <Box
+                    marginLeft="50px !important"
+                    fontSize="13px !important"
+                    display={showParticipants ? "flex" : "none"}
+                    width={"40px"}
+                    id="members__count"
+                    bg={"#bee3f8"}
+                    justifyContent="center"
+                    alignItems="center"
+                    borderRadius={"md"}
+                    fontWeight="bold !important"
+                    h={"30px"}
+                    fontFamily="Work sans"
+                  >
+                    {/* <p
+                      id="members__count"
+                      display="inline-block"
+                      style={{
+                        backgroundColor: "#e2e8f0",
+                        width: "30px",
+                        alignItems: "center",
+                      }}
+                    >
+                      0
+                    </p> */}
+                    {0}
+                  </Box>
+                </HStack>
+              </Box>
+
+              <Box
+                mt={6}
+                display={showParticipants ? "block" : "none"}
+                height={"580px"}
+                overflowY="scroll"
+                p={4}
+                pt={0}
+              >
+                <div id="member__list"></div>
+              </Box>
+            </section>
+          }
         </Box>
 
         <Box
@@ -532,14 +787,9 @@ const VideoRoom = () => {
           <section id="stream__container">
             <div id="stream__box"></div>
             <div id="streams__container">
-              <div class="video__container" id="user-container-1">
-                <div class="video-player" id="user-${u.uid}"></div>
-                {/* <span>{user.name}</span> */}
-              </div>
-
-              <div class="video__container" id="user-container-2">
+              {/* <div class="video__container" id="user-container-2">
                 <h1></h1>
-              </div>
+              </div> */}
             </div>
 
             {/* <!-- controls --> */}
@@ -595,14 +845,52 @@ const VideoRoom = () => {
         <Box
           bg="gray.100"
           flex={showChat ? 1 : 0}
-          p={4}
-          display={showChat ? "block" : "none"}
-          // borderRightRadius="lg"
+          // p={4}
+          // pt={0}
+          display={showChat ? "flex" : "none"}
           borderWidth="1px"
           maxW="350px"
+          height={"665px"}
+          overflowY="scroll"
+          flexDirection={"column"}
         >
-          {/* Chatting Partition */}
-          {showChat && <Text>Chatting Partition</Text>}
+          <section id="messages__container">
+            <Box
+              bg={"#e2e8f0"}
+              h={"50px"}
+              display="flex"
+              p={2}
+              pl={"auto"}
+              pr={"auto"}
+              justifyContent="center"
+              fontWeight={"medium"}
+              fontSize="18px !important"
+            >
+              {"Messages"}
+            </Box>
+            <Box
+              id="messages"
+              height={"535px"}
+              overflowY="scroll"
+              mt={2}
+              p={4}
+              pt={0}
+            ></Box>
+
+            <Box p={3}>
+              <form id="message__form" onSubmit={sendMessage}>
+                <FormControl isRequired mt={1} position={"fixed"} w="320px">
+                  <Input
+                    type="text"
+                    name="message"
+                    placeholder="Send a message...."
+                    variant="filled"
+                    bg="#E2E8F0"
+                  />
+                </FormControl>
+              </form>
+            </Box>
+          </section>
         </Box>
       </Box>
     </div>
