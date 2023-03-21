@@ -1,11 +1,11 @@
-import { ArrowBackIcon } from "@chakra-ui/icons";
+import { ArrowBackIcon, Icon } from "@chakra-ui/icons";
 import { FormControl } from "@chakra-ui/form-control";
 import { Input } from "@chakra-ui/input";
-import { Box, Text } from "@chakra-ui/layout";
+import { Box, Text, Stack, HStack } from "@chakra-ui/layout";
 import "./styles.css";
 import { IconButton, Spinner, useToast } from "@chakra-ui/react";
 import { getSender, getSenderFull } from "../config/ChatLogics";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import ProfileModal from "./miscellaneous/ProfileModal";
 import ScrollableChat from "./ScrollableChat";
@@ -16,13 +16,17 @@ import CryptoJS from "crypto-js";
 import io from "socket.io-client";
 import UpdateGroupChatModal from "./miscellaneous/UpdateGroupChatModal";
 import { ChatState } from "../Context/ChatProvider";
-import { MdCall } from "react-icons/md";
+import { MdCall, MdOutlineMic, MdAttachFile } from "react-icons/md";
 import { useHistory } from "react-router-dom";
+import SpeechRecognition, {
+  useSpeechRecognition,
+} from "react-speech-recognition";
 
 const ENDPOINT = "http://localhost:5000";
 var socket, selectedChatCompare;
 
 const SingleChat = ({ fetchAgain, setFetchAgain }) => {
+  const inputRef = useRef();
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [newMessage, setNewMessage] = useState("");
@@ -39,6 +43,8 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     setNewMsg,
   } = ChatState();
 
+  const { transcript, resetTranscript, listening } = useSpeechRecognition();
+
   const toast = useToast();
   const history = useHistory();
 
@@ -50,6 +56,13 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       preserveAspectRatio: "xMidYMid slice",
     },
   };
+
+  useEffect(() => {
+    if (transcript) {
+      inputRef.current.value = transcript;
+      setNewMessage(transcript);
+    }
+  }, [transcript]);
 
   const fetchMessages = async () => {
     if (!selectedChat) return;
@@ -87,6 +100,10 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
   const sendMessage = async (event) => {
     // if enter key is pressed and newMessage is typed
+    // if (transcript) {
+    //   setNewMessage(transcript);
+    //   // resetTranscript;
+    // }
     if (event.key === "Enter" && newMessage) {
       socket.emit("stop typing", selectedChat._id);
       try {
@@ -126,6 +143,26 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       }
     }
   };
+
+  const handleButtonClick = (e) => {
+    e.preventDefault();
+    if (SpeechRecognition.browserSupportsSpeechRecognition()) {
+      if (listening) {
+        SpeechRecognition.stopListening();
+      } else {
+        SpeechRecognition.startListening({ continuous: true });
+      }
+    }
+  };
+
+  const handleInputClick = () => {
+    resetTranscript();
+    // setNewMessage("");
+  };
+
+  // const handleInputChange = (e) => {
+  //   setNewMessage(e.target.value);
+  // };
 
   useEffect(() => {
     socket = io(ENDPOINT);
@@ -292,13 +329,32 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
               ) : (
                 <></>
               )}
-              <Input
-                variant="filled"
-                bg="#E0E0E0"
-                placeholder="Enter a message..."
-                value={newMessage}
-                onChange={typingHandler}
-              />
+              <HStack>
+                <Input
+                  ref={inputRef}
+                  variant="filled"
+                  bg="#E0E0E0"
+                  placeholder="Enter a message..."
+                  onClick={handleInputClick}
+                  onChange={typingHandler}
+                  value={newMessage || transcript}
+                />
+
+                <IconButton
+                  icon={<MdOutlineMic />}
+                  colorScheme="blue"
+                  variant="solid"
+                  // onClick={speechToText}
+                  onClick={handleButtonClick}
+                ></IconButton>
+
+                <IconButton
+                  icon={<MdAttachFile />}
+                  colorScheme="blue"
+                  // backgroundColor="#E0E0E0"
+                  variant="solid"
+                ></IconButton>
+              </HStack>
             </FormControl>
           </Box>
         </>
