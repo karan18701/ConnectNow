@@ -3,7 +3,7 @@ import { FormControl } from "@chakra-ui/form-control";
 import { Input } from "@chakra-ui/input";
 import { Box, Text, Stack, HStack } from "@chakra-ui/layout";
 import "./styles.css";
-import { IconButton, Spinner, useToast } from "@chakra-ui/react";
+import { IconButton, position, Spinner, useToast } from "@chakra-ui/react";
 import { getSender, getSenderFull } from "../config/ChatLogics";
 import { useEffect, useState, useRef } from "react";
 import axios from "axios";
@@ -12,6 +12,9 @@ import ScrollableChat from "./ScrollableChat";
 import Lottie from "react-lottie";
 import animationData from "../animations/typing.json";
 import CryptoJS from "crypto-js";
+import Picker from "emoji-picker-react";
+
+import { BsEmojiSmileFill } from "react-icons/bs";
 
 import io from "socket.io-client";
 import UpdateGroupChatModal from "./miscellaneous/UpdateGroupChatModal";
@@ -33,6 +36,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const [socketConnected, setSocketConnected] = useState(false);
   const [typing, setTyping] = useState(false);
   const [istyping, setIsTyping] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const {
     selectedChat,
     setSelectedChat,
@@ -160,10 +164,6 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     // setNewMessage("");
   };
 
-  // const handleInputChange = (e) => {
-  //   setNewMessage(e.target.value);
-  // };
-
   useEffect(() => {
     socket = io(ENDPOINT);
     socket.emit("setup", user);
@@ -226,6 +226,17 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
   const startVideoCall = () => {
     history.push("/video-call");
+  };
+
+  const handleEmojiPickerHideShow = () => {
+    setShowEmojiPicker(!showEmojiPicker);
+  };
+
+  const handleEmojiClick = (emoji) => {
+    // console.log("emoji", typeof emoji.emoji);
+    let messg = newMessage;
+    messg += emoji.emoji;
+    setNewMessage(messg);
   };
 
   return (
@@ -330,6 +341,24 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                 <></>
               )}
               <HStack>
+                <div className="wrapper">
+                  <IconButton
+                    className="emoji"
+                    icon={<BsEmojiSmileFill />}
+                    // colorScheme="blue"
+                    size={"md"}
+                    backgroundColor="#e8e8e8"
+                    variant="solid"
+                    color={"#3182ce"}
+                    onClick={handleEmojiPickerHideShow}
+                  ></IconButton>
+                  {showEmojiPicker && (
+                    <div className="picker-wrapper">
+                      <Picker onEmojiClick={handleEmojiClick} />
+                    </div>
+                  )}
+                </div>
+
                 <Input
                   ref={inputRef}
                   variant="filled"
