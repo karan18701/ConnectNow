@@ -6,6 +6,7 @@ const colors = require("colors");
 const userRoutes = require("./routes/userRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const messageRoutes = require("./routes/messageRoutes");
+const channelRoutes = require("./routes/channelRoutes");
 
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 
@@ -31,6 +32,7 @@ const server = app.listen(
 app.use("/api/user", userRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/message", messageRoutes);
+app.use("/api/channel", channelRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
