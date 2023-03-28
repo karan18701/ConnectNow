@@ -44,6 +44,26 @@ const ChatStack = ({ fetchAgain }) => {
     }
   };
 
+  const isChatSelected = (chat) => {
+    return selectedChat && selectedChat._id === chat._id;
+  };
+
+  const hasUnreadMessages = (chat) => {
+    return chat.latestMessage.sender.id !== user._id;
+  };
+
+  const getChatBgColor = (chat) => {
+    if (isChatSelected(chat)) {
+      return hasUnreadMessages(chat) ? "#4c6ed5" : "#E8E8E8";
+    } else {
+      return "#E8E8E8";
+    }
+  };
+
+  const getChatTextColor = (chat) => {
+    return isChatSelected(chat) ? "white" : "black";
+  };
+
   useEffect(() => {
     setLoggedUser(JSON.parse(localStorage.getItem("userInfo")));
     fetchChats();
@@ -55,8 +75,10 @@ const ChatStack = ({ fetchAgain }) => {
         <Box
           onClick={() => setSelectedChat(chat)}
           cursor="pointer"
-          bg={selectedChat === chat ? "#4c6ed5" : "#E8E8E8"}
-          color={selectedChat === chat ? "white" : "black"}
+          // bg={selectedChat === chat ? "#4c6ed5" : "#E8E8E8"}
+          // color={selectedChat === chat ? "white" : "black"}
+          bg={getChatBgColor(chat)}
+          color={getChatTextColor(chat)}
           px={3}
           py={2}
           borderRadius="lg"

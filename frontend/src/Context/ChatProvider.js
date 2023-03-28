@@ -12,9 +12,12 @@ const ChatProvider = ({ children }) => {
   const [selectedChat, setSelectedChat] = useState();
   const [notification, setNotification] = useState([]);
   const [chats, setChats] = useState();
+  const [channels, setChannels] = useState();
+
   // for displaying lastest msg on chat box to do
   const [newMsg, setNewMsg] = useState([]);
   const [selectedItem, setSelectedItem] = useState("Chats");
+  const [selectedChannel, setSelectedChannel] = useState();
 
   const history = useHistory();
 
@@ -49,6 +52,10 @@ const ChatProvider = ({ children }) => {
         setNewMsg,
         selectedItem,
         setSelectedItem,
+        selectedChannel,
+        setSelectedChannel,
+        channels,
+        setChannels,
       }}
     >
       {children}

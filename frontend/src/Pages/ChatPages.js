@@ -30,7 +30,7 @@ const ChatPages = () => {
         justifyContent="space-between"
         w="100%"
         h="91.5vh"
-        p="10px"
+        p="5px"
       >
         {user && <MyChats fetchAgain={fetchAgain} />}
         {user && (

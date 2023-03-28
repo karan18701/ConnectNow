@@ -6,6 +6,7 @@ const {
   renameGroup,
   addToGroup,
   removeFromGroup,
+  deleteChat,
 } = require("../controller/chatController");
 const { protect } = require("../middleware/authMiddleware");
 
@@ -17,5 +18,6 @@ router.route("/group").post(protect, createGroupChat);
 router.route("/rename").put(protect, renameGroup);
 router.route("/groupremove").put(protect, removeFromGroup);
 router.route("/groupadd").put(protect, addToGroup);
+router.route("/deletechat").put(protect, deleteChat);
 
 module.exports = router;

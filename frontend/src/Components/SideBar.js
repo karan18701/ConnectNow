@@ -89,12 +89,12 @@ const SideBar = () => {
 
           <Box
             onClick={() => {
-              handleClick("Contact");
+              handleClick("Channel");
             }}
             display="flex"
             cursor={"pointer"}
-            bg={selectedItem === "Contact" ? "#4c6ed5" : "#ffffff"}
-            color={selectedItem === "Contact" ? "#ffffff" : "black"}
+            bg={selectedItem === "Channel" ? "#4c6ed5" : "#ffffff"}
+            color={selectedItem === "Channel" ? "#ffffff" : "black"}
             key={2}
             w={"85%"}
             borderRadius="lg"

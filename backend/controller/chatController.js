@@ -1,6 +1,7 @@
 const asyncHandler = require("express-async-handler");
 const Chat = require("../models/chatModel");
 const User = require("../models/userModel");
+const getDate = require("../config/getDate");
 
 //@description     Create or fetch One to One Chat
 //@route           POST /api/chat/
@@ -23,10 +24,6 @@ const accessChat = asyncHandler(async (req, res) => {
     .populate("users", "-password")
     .populate("latestMessage");
 
-  // console.log("hello");
-  // console.log(isChat);
-  // console.log("done");
-
   isChat = await User.populate(isChat, {
     path: "latestMessage.sender",
     select: "name pic email",
@@ -35,10 +32,23 @@ const accessChat = asyncHandler(async (req, res) => {
   if (isChat.length > 0) {
     res.send(isChat[0]);
   } else {
+    let dt = getDate();
+    lastdel = [
+      {
+        participant: String(req.user._id),
+        lastTime: dt,
+      },
+      {
+        participant: String(userId),
+        lastTime: dt,
+      },
+    ];
+
     var chatData = {
       chatName: "sender",
       isGroupChat: false,
       users: [req.user._id, userId],
+      lastDeleted: lastdel,
     };
 
     try {
@@ -67,7 +77,24 @@ const fetchChats = asyncHandler(async (req, res) => {
           path: "latestMessage.sender",
           select: "name pic email",
         });
-        res.status(200).send(results);
+        var final = [];
+        results.forEach((item) => {
+          if (item.lastDeleted) {
+            var LastDel;
+            item.lastDeleted.forEach((elem) => {
+              if (String(elem.participant) === String(req.user._id)) {
+                LastDel = elem.lastTime;
+              }
+            });
+            // console.log(LastDel, item.latestMessage.time);
+            if (!item.latestMessage || item.latestMessage.time > LastDel) {
+              final.push(item);
+            }
+          }
+        });
+
+        // console.log("Final List of Chats", final);
+        res.status(200).send(final);
       });
   } catch (error) {
     res.status(400);
@@ -90,8 +117,16 @@ const createGroupChat = asyncHandler(async (req, res) => {
       .send("More than 2 users are required to form a group chat");
   }
 
-  users.push(req.user);
-
+  let dt = getDate();
+  users.push(String(req.user._id));
+  let lastDeletedMessage = [];
+  users.forEach((element) => {
+    var userx = {
+      participant: element,
+      lastTime: dt,
+    };
+    lastDeletedMessage.push(userx);
+  });
   try {
     // create grou chat
     const groupChat = await Chat.create({
@@ -99,6 +134,7 @@ const createGroupChat = asyncHandler(async (req, res) => {
       isGroupChat: true,
       users: users,
       groupAdmin: req.user,
+      lastDeleted: lastDeletedMessage,
     });
 
     // send back full chat to user
@@ -160,24 +196,80 @@ const addToGroup = asyncHandler(async (req, res) => {
 
 const removeFromGroup = asyncHandler(async (req, res) => {
   const { chatId, userId } = req.body;
+  var reqUser = req.user._id.toString();
+  const groupChat = await Chat.findById(chatId);
+  let removed = null;
 
-  const removed = await Chat.findByIdAndUpdate(
-    chatId,
-    {
-      $pull: { users: userId },
-    },
-    {
-      new: true,
-    }
-  )
-    .populate("users", "-password")
-    .populate("groupAdmin", "-password");
+  if (reqUser === userId) {
+    removed = await Chat.findByIdAndUpdate(
+      groupChat,
+      {
+        $pull: { users: userId },
+        $set: { groupAdmin: null },
+      },
+      {
+        new: true,
+      }
+    )
+      .populate("users", "-password")
+      .populate("groupAdmin", "-password");
+    const updateAdmin = await Chat.findByIdAndUpdate(
+      groupChat,
+      {
+        $set: { groupAdmin: groupChat.users[0] },
+      },
+      {
+        new: true,
+      }
+    )
+      .populate("users", "-password")
+      .populate("groupAdmin", "-password");
+  } else {
+    removed = await Chat.findByIdAndUpdate(
+      groupChat,
+      {
+        $pull: { users: userId },
+      },
+      {
+        new: true,
+      }
+    )
+      .populate("users", "-password")
+      .populate("groupAdmin", "-password");
+  }
 
   if (!removed) {
     res.status(400);
-    throw new Error("User not added");
+    throw new Error("User is not removed");
   } else {
     res.json(removed);
+  }
+});
+
+const deleteChat = asyncHandler(async (req, res) => {
+  // console.log("Hello");
+  const { chatId, userId } = req.body;
+  var str = String(userId);
+  var newLastTime = getDate();
+  try {
+    Chat.findByIdAndUpdate(
+      chatId,
+      { $set: { "lastDeleted.$[elem].lastTime": newLastTime } },
+      {
+        arrayFilters: [{ "elem.participant": str }],
+        new: true,
+      },
+      function (err, chat) {
+        if (err) {
+          console.log(err);
+          res.status(400);
+        } else {
+          res.status(200).json(chat);
+        }
+      }
+    );
+  } catch (err) {
+    console.log(err);
   }
 });
 
@@ -188,4 +280,5 @@ module.exports = {
   renameGroup,
   addToGroup,
   removeFromGroup,
+  deleteChat,
 };

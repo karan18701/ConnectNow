@@ -3,7 +3,7 @@ const Channel = require("../models/channelModel");
 const User = require("../models/userModel");
 
 const createChannel = asyncHandler(async (req, res) => {
-  if (!req.body.name) {
+  if (!req.body.name && !req.body.discription) {
     return res
       .status(400)
       .send({ message: "Please fill all the feilds require" });
@@ -24,6 +24,7 @@ const createChannel = asyncHandler(async (req, res) => {
     const groupChannel = await Channel.create({
       channelName: req.body.name,
       users: req.user,
+      discription: req.body.discription,
       channelAdmin: req.user,
     });
 
@@ -120,10 +121,77 @@ const deleteChannel = asyncHandler(async (req, res) => {
   }
 });
 
+const fetchChannels = asyncHandler(async (req, res) => {
+  console.log("hello");
+  try {
+    Channel.find({ users: { $elemMatch: { $eq: req.user._id } } })
+      .populate("users", "-password")
+      .populate("channelAdmin", "-password")
+      // .populate("latestMessage")
+      .sort({ updatedAt: -1 })
+      .then(async (results) => {
+        results = await User.populate(results, {
+          path: "latestMessage.sender",
+          select: "name pic email",
+        });
+        res.status(200).send(results);
+        // console.log("results", results);
+      });
+  } catch (error) {
+    res.status(400);
+    throw new Error(error.message);
+  }
+});
+
+const accessChannel = asyncHandler(async (req, res) => {
+  const { userId } = req.body;
+
+  if (!userId) {
+    console.log("UserId param not sent with request");
+    return res.sendStatus(400);
+  }
+
+  var isChannel = await Channel.find({
+    $and: [
+      { users: { $elemMatch: { $eq: req.user._id } } },
+      { users: { $elemMatch: { $eq: userId } } },
+    ],
+  })
+    .populate("users", "-password")
+    .populate("latestMessage");
+
+  isChannel = await User.populate(isChannel, {
+    path: "latestMessage.sender",
+    select: "name pic email",
+  });
+
+  if (isChannel.length > 0) {
+    res.send(isChannel[0]);
+  } else {
+    var channelData = {
+      channelName: "sender",
+      users: [req.user._id, userId],
+    };
+
+    try {
+      const createdChannel = await Channel.create(channelData);
+      const FullChannel = await Channel.findOne({
+        _id: createdChannel._id,
+      }).populate("users", "-password");
+      res.status(200).json(FullChannel);
+    } catch (error) {
+      res.status(400);
+      throw new Error(error.message);
+    }
+  }
+});
+
 module.exports = {
   createChannel,
   addToChannel,
   removeFromChannel,
   renameChannel,
   deleteChannel,
+  fetchChannels,
+  accessChannel,
 };

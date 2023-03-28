@@ -62,6 +62,14 @@ io.on("connection", (socket) => {
 
   socket.on("typing", (room) => socket.in(room).emit("typing"));
 
+  socket.on("join video", (room, name) => {
+    socket.join(room);
+
+    console.log(name + "User Joined Video Room: " + room);
+  });
+
+  socket.on("show calling", (room) => socket.in(room).emit("show calling"));
+
   socket.on("stop typing", (room) => socket.in(room).emit("stop typing"));
 
   socket.on("new message", (newMessageRecieved) => {

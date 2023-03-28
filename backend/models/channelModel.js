@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const channelModel = mongoose.Schema(
   {
     channelName: { type: String, trim: true },
+    discription: { type: String },
     users: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -11,7 +12,7 @@ const channelModel = mongoose.Schema(
     ],
     latestMessage: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Message",
+      ref: "ChannelMessage",
     },
     channelAdmin: {
       type: mongoose.Schema.Types.ObjectId,

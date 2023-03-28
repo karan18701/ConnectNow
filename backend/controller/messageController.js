@@ -2,13 +2,34 @@ const asyncHandler = require("express-async-handler");
 const Message = require("../models/messageModel");
 const User = require("../models/userModel");
 const Chat = require("../models/chatModel");
+const getDate = require("../config/getDate");
 
 const allMessages = asyncHandler(async (req, res) => {
+  // try {
+  //   const messages = await Message.find({ chat: req.params.chatId })
+  //     .populate("sender", "name pic email")
+  //     .populate("chat");
+  //   res.json(messages);
+  // } catch (error) {
+  //   res.status(400);
+  //   throw new Error(error.message);
+  // }
   try {
+    var chat = await Chat.findById(req.params.chatId);
+    var lastDel;
+    chat.lastDeleted.forEach((element) => {
+      if (String(req.user._id) === String(element.participant)) {
+        lastDel = element.lastTime;
+      }
+    });
     const messages = await Message.find({ chat: req.params.chatId })
       .populate("sender", "name pic email")
       .populate("chat");
-    res.json(messages);
+    // console.log(lastDel);
+    const newMsg = messages.filter((elem) => elem.time > lastDel);
+    // console.log(newMsg);
+    // console.log(messages)
+    res.json(newMsg);
   } catch (error) {
     res.status(400);
     throw new Error(error.message);
@@ -27,6 +48,7 @@ const sendMessage = asyncHandler(async (req, res) => {
     sender: req.user._id,
     content: content,
     chat: chatId,
+    time: getDate(),
   };
 
   try {

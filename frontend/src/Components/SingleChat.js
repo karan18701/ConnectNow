@@ -3,7 +3,20 @@ import { FormControl } from "@chakra-ui/form-control";
 import { Input } from "@chakra-ui/input";
 import { Box, Text, Stack, HStack } from "@chakra-ui/layout";
 import "./styles.css";
-import { IconButton, position, Spinner, useToast } from "@chakra-ui/react";
+import {
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogOverlay,
+  Button,
+  IconButton,
+  position,
+  Spinner,
+  useDisclosure,
+  useToast,
+} from "@chakra-ui/react";
 import { getSender, getSenderFull } from "../config/ChatLogics";
 import { useEffect, useState, useRef } from "react";
 import axios from "axios";
@@ -19,7 +32,7 @@ import { BsEmojiSmileFill } from "react-icons/bs";
 import io from "socket.io-client";
 import UpdateGroupChatModal from "./miscellaneous/UpdateGroupChatModal";
 import { ChatState } from "../Context/ChatProvider";
-import { MdCall, MdOutlineMic, MdAttachFile } from "react-icons/md";
+import { MdCall, MdOutlineMic, MdAttachFile, MdDelete } from "react-icons/md";
 import { useHistory } from "react-router-dom";
 import SpeechRecognition, {
   useSpeechRecognition,
@@ -32,11 +45,14 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const inputRef = useRef();
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [videoCallOn, setVideoCallOn] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [socketConnected, setSocketConnected] = useState(false);
   const [typing, setTyping] = useState(false);
   const [istyping, setIsTyping] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const { isOpen, onOpen, onClose } = useDisclosure();
+
   const {
     selectedChat,
     setSelectedChat,
@@ -170,6 +186,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     socket.on("connected", () => setSocketConnected(true));
     socket.on("typing", () => setIsTyping(true));
     socket.on("stop typing", () => setIsTyping(false));
+    socket.on("show calling", () => setVideoCallOn(true));
   }, []);
 
   useEffect(() => {
@@ -198,6 +215,32 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     });
   });
 
+  const deleteHandler = async () => {
+    console.log(user.token);
+    try {
+      // setLoading(true)
+      const config = {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+      };
+
+      const data = await axios.put(
+        `/api/chat/deletechat`,
+        {
+          chatId: selectedChat._id,
+          userId: user._id,
+        },
+        config
+      );
+
+      window.location.reload();
+      //  setLoading(false);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
   // typing functionality
   const typingHandler = (e) => {
     setNewMessage(e.target.value);
@@ -224,7 +267,15 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     }, timerLength);
   };
 
-  const startVideoCall = () => {
+  // const startVideoCall = () => {
+  //   history.push("/video-call");
+  // };
+
+  const startVideoCall = async (event) => {
+    socket.emit("join video", selectedChat._id, user.name);
+    if (!videoCallOn) {
+      socket.emit("show calling", selectedChat._id, user.name);
+    }
     history.push("/video-call");
   };
 
@@ -254,11 +305,39 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
             alignItems="center"
           >
             {/* arrow back icon if screen is small */}
-            <IconButton
-              display={{ base: "flex", md: "none" }}
-              icon={<ArrowBackIcon />}
-              onClick={() => setSelectedChat("")}
-            />
+            <HStack>
+              <IconButton
+                display={{ base: "flex", md: "none" }}
+                icon={<ArrowBackIcon />}
+                onClick={() => setSelectedChat("")}
+              />
+              <IconButton
+                display={{ base: "flex" }}
+                icon={<MdDelete />}
+                // fontSize="25px"
+                onClick={onOpen}
+                // colorScheme={"whatsapp"}
+                ml={{ md: "0px!important" }}
+              />
+              <AlertDialog isOpen={isOpen} onClose={onClose} isCentered>
+                <AlertDialogOverlay>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>Delete Chat</AlertDialogHeader>
+                    <AlertDialogBody>
+                      {"Are you sure want to delete chat?"}
+                    </AlertDialogBody>
+                    <AlertDialogFooter>
+                      <Button onClick={onClose} ml={3}>
+                        NO
+                      </Button>
+                      <Button onClick={deleteHandler} colorScheme="red" ml={3}>
+                        YES
+                      </Button>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialogOverlay>
+              </AlertDialog>
+            </HStack>
 
             {/* if group chat selected show group chat ui and if not group chat then show  user name and profile*/}
             {messages &&
@@ -277,7 +356,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                   <div style={{ display: "flex", flexDirection: "row" }}>
                     <IconButton
                       icon={<MdCall />}
-                      colorScheme="green"
+                      colorScheme={videoCallOn ? "green" : "red"}
                       variant="solid"
                       w={"8px"}
                       mr={"10px"}
@@ -345,7 +424,6 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                   <IconButton
                     className="emoji"
                     icon={<BsEmojiSmileFill />}
-                    // colorScheme="blue"
                     size={"md"}
                     backgroundColor="#e8e8e8"
                     variant="solid"

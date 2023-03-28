@@ -10,6 +10,15 @@ const chatModel = mongoose.Schema(
         ref: "User",
       },
     ],
+    lastDeleted: [
+      {
+        participant: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
+        lastTime: { type: String },
+      },
+    ],
     latestMessage: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Message",

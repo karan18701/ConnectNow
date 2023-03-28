@@ -4,6 +4,7 @@ import { useHistory } from "react-router-dom";
 import SideBar from "../Components/SideBar";
 import UpdateProfile from "../Components/UpdateProfile";
 import { ChatState } from "../Context/ChatProvider";
+import ChannelPage from "./ChannelPage";
 import ChatPages from "./ChatPages";
 import ResetPage from "./ResetPage";
 
@@ -28,7 +29,7 @@ const MainPage = () => {
 
       <Box width="1440px" ml={0}>
         {selectedItem === "Chats" && <ChatPages />}
-        {/* {selectedItem === "Contact" && <Contact />} */}
+        {selectedItem === "Channel" && <ChannelPage />}
         {selectedItem === "ResetPage" && <ResetPage />}
         {selectedItem === "UpdateUser" && <UpdateProfile />}
       </Box>
