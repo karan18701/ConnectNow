@@ -120,10 +120,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
   const sendMessage = async (event) => {
     // if enter key is pressed and newMessage is typed
-    // if (transcript) {
-    //   setNewMessage(transcript);
-    //   // resetTranscript;
-    // }
+
     if (event.key === "Enter" && newMessage) {
       socket.emit("stop typing", selectedChat._id);
       try {
@@ -137,7 +134,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         setNewMessage("");
         const cipherText = CryptoJS.AES.encrypt(
           newMessage,
-          "my-secret-key@123"
+          String(selectedChat._id)
         ).toString();
         const { data } = await axios.post(
           "/api/message",
@@ -147,6 +144,8 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
           },
           config
         );
+
+        console.log("new msgsss ", data);
 
         socket.emit("new message", data);
         setMessages([...messages, data]);
@@ -272,10 +271,10 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   // };
 
   const startVideoCall = async (event) => {
-    socket.emit("join video", selectedChat._id, user.name);
-    if (!videoCallOn) {
-      socket.emit("show calling", selectedChat._id, user.name);
-    }
+    // socket.emit("join video", selectedChat._id, user.name);
+    // if (!videoCallOn) {
+    // socket.emit("show calling", selectedChat._id, user.name);
+    // }
     history.push("/video-call");
   };
 

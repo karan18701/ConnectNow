@@ -14,11 +14,10 @@ const ChatStack = ({ fetchAgain }) => {
   const [loggedUser, setLoggedUser] = useState();
   const toast = useToast();
 
-  const decryptMsg = (message) => {
-    return (message = CryptoJS.AES.decrypt(
-      message,
-      "my-secret-key@123"
-    ).toString(CryptoJS.enc.Utf8));
+  const decryptMsg = (key, message) => {
+    return (message = CryptoJS.AES.decrypt(message, key).toString(
+      CryptoJS.enc.Utf8
+    ));
   };
 
   const fetchChats = async () => {
@@ -49,7 +48,7 @@ const ChatStack = ({ fetchAgain }) => {
   };
 
   const hasUnreadMessages = (chat) => {
-    return chat.latestMessage.sender.id !== user._id;
+    return chat.latestMessage?.sender?.id !== user._id;
   };
 
   const getChatBgColor = (chat) => {
@@ -93,9 +92,11 @@ const ChatStack = ({ fetchAgain }) => {
             <Text fontSize="xs">
               <b>{chat.latestMessage.sender.name} : </b>
               {chat.latestMessage.content.length > 50
-                ? decryptMsg(chat.latestMessage.content).substring(0, 51) +
-                  "..."
-                : decryptMsg(chat.latestMessage.content)}
+                ? decryptMsg(chat._id, chat.latestMessage.content).substring(
+                    0,
+                    51
+                  ) + "..."
+                : decryptMsg(chat._id, chat.latestMessage.content)}
             </Text>
           )}
         </Box>

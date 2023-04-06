@@ -38,7 +38,7 @@ const VideoRoom = () => {
   const [videoState, setVideoState] = useState(true);
   const [audioState, setAudioState] = useState(true);
 
-  const { selectedChat, user } = ChatState();
+  const { selectedChat, user, selectedChannel } = ChatState();
 
   const toast = useToast();
   const history = useHistory();
@@ -48,7 +48,7 @@ const VideoRoom = () => {
   const options = {
     appId: APP_ID,
     token: null,
-    roomId: selectedChat._id,
+    roomId: selectedChannel._id,
   };
 
   let displayFrame = document.getElementById("stream__box");
@@ -666,7 +666,7 @@ const VideoRoom = () => {
         </Button>
 
         <Text fontSize="2xl" fontFamily="Work sans">
-          {selectedChat.chatName}
+          {selectedChannel.channelName}
         </Text>
 
         <Button

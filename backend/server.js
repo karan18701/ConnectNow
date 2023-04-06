@@ -7,6 +7,7 @@ const userRoutes = require("./routes/userRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 const channelRoutes = require("./routes/channelRoutes");
+const channelMessageRoutes = require("./routes/channelMessageRoutes");
 
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 
@@ -33,6 +34,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/message", messageRoutes);
 app.use("/api/channel", channelRoutes);
+app.use("/api/channelmessage", channelMessageRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
@@ -68,7 +70,29 @@ io.on("connection", (socket) => {
     console.log(name + "User Joined Video Room: " + room);
   });
 
-  socket.on("show calling", (room) => socket.in(room).emit("show calling"));
+  socket.on("show calling", (room, user, channel) => {
+    socket.in(room).emit("show calling");
+
+    // console.log("new msg", channel);
+
+    channel.users.forEach((u) => {
+      if (user._id == u._id) return;
+      // console.log("channel", channel);
+
+      socket.in(u._id).emit("group video", channel);
+    });
+  });
+
+  socket.on("group video", (newChannelMessage) => {
+    var channel = newChannelMessage.channel;
+    console.log(channel);
+    channel.users.forEach((u) => {
+      if (u._id == newChannelMessage.sender._id) return;
+      // console.log("channel", channel);
+
+      socket.in(u._id).emit("group video recieved", newChannelMessage);
+    });
+  });
 
   socket.on("stop typing", (room) => socket.in(room).emit("stop typing"));
 

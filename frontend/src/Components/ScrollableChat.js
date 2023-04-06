@@ -11,12 +11,13 @@ import {
 import { ChatState } from "../Context/ChatProvider";
 
 const ScrollableChat = ({ messages }) => {
-  const { user } = ChatState();
+  const { user, selectedChat } = ChatState();
 
   const decryptMsg = (message) => {
     return (message = CryptoJS.AES.decrypt(
       message,
-      "my-secret-key@123"
+      // "my-secret-key@123"
+      String(selectedChat._id)
     ).toString(CryptoJS.enc.Utf8));
   };
 

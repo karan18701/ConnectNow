@@ -18,6 +18,6 @@ router.route("/channelcreate").post(protect, createChannel);
 router.route("/channelrename").put(protect, renameChannel);
 router.route("/channelremoveUser").put(protect, removeFromChannel);
 router.route("/channeladdUser").put(protect, addToChannel);
-router.route("/channeldelete").delete(protect, deleteChannel);
+router.route("/channeldelete").put(protect, deleteChannel);
 
 module.exports = router;
