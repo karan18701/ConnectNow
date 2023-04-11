@@ -177,6 +177,7 @@ const SingleChannel = ({ fetchAgain, setFetchAgain }) => {
       );
 
       console.log("new msgsss ", data);
+      socket.emit("new channelmessage", data);
 
       socket.emit("group video", data);
     } catch (error) {
@@ -384,6 +385,8 @@ const SingleChannel = ({ fetchAgain, setFetchAgain }) => {
         },
         config
       );
+      socket.emit("new channelmessage", data);
+
       setMessage([...message, data]);
 
       postDisclosure.onClose();
