@@ -266,18 +266,6 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     }, timerLength);
   };
 
-  // const startVideoCall = () => {
-  //   history.push("/video-call");
-  // };
-
-  const startVideoCall = async (event) => {
-    // socket.emit("join video", selectedChat._id, user.name);
-    // if (!videoCallOn) {
-    // socket.emit("show calling", selectedChat._id, user.name);
-    // }
-    history.push("/video-call");
-  };
-
   const handleEmojiPickerHideShow = () => {
     setShowEmojiPicker(!showEmojiPicker);
   };
@@ -353,14 +341,14 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                   {/* group name */}
                   {selectedChat.chatName.toUpperCase()}
                   <div style={{ display: "flex", flexDirection: "row" }}>
-                    <IconButton
+                    {/* <IconButton
                       icon={<MdCall />}
                       colorScheme={videoCallOn ? "green" : "red"}
                       variant="solid"
                       w={"8px"}
                       mr={"10px"}
                       onClick={startVideoCall}
-                    ></IconButton>
+                    ></IconButton> */}
 
                     <UpdateGroupChatModal
                       fetchMessages={fetchMessages}

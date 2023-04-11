@@ -14,11 +14,17 @@ const ScrollableChat = ({ messages }) => {
   const { user, selectedChat } = ChatState();
 
   const decryptMsg = (message) => {
-    return (message = CryptoJS.AES.decrypt(
-      message,
-      // "my-secret-key@123"
-      String(selectedChat._id)
-    ).toString(CryptoJS.enc.Utf8));
+    const key = String(selectedChat._id);
+    let decryptedMessage;
+    try {
+      decryptedMessage = CryptoJS.AES.decrypt(message, key).toString(
+        CryptoJS.enc.Utf8
+      );
+      return decryptedMessage;
+    } catch (error) {
+      console.log("Error: ", error);
+    }
+    return decryptedMessage;
   };
 
   return (

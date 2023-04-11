@@ -64,6 +64,20 @@ io.on("connection", (socket) => {
 
   socket.on("typing", (room) => socket.in(room).emit("typing"));
 
+  socket.on("stop typing", (room) => socket.in(room).emit("stop typing"));
+
+  socket.on("new message", (newMessageRecieved) => {
+    var chat = newMessageRecieved.chat;
+
+    if (!chat.users) return console.log("chat.users not defined");
+
+    chat.users.forEach((user) => {
+      if (user._id == newMessageRecieved.sender._id) return;
+
+      socket.in(user._id).emit("message recieved", newMessageRecieved);
+    });
+  });
+
   socket.on("join video", (room, name) => {
     socket.join(room);
 
@@ -85,7 +99,7 @@ io.on("connection", (socket) => {
 
   socket.on("group video", (newChannelMessage) => {
     var channel = newChannelMessage.channel;
-    console.log(channel);
+    // console.log(channel);
     channel.users.forEach((u) => {
       if (u._id == newChannelMessage.sender._id) return;
       // console.log("channel", channel);
@@ -94,17 +108,20 @@ io.on("connection", (socket) => {
     });
   });
 
-  socket.on("stop typing", (room) => socket.in(room).emit("stop typing"));
+  socket.on("join channel", (room) => {
+    socket.join(room);
+    console.log("User Joined Channel: " + room);
+  });
 
-  socket.on("new message", (newMessageRecieved) => {
-    var chat = newMessageRecieved.chat;
+  socket.on("new channelmessage", (newMessageRecieved) => {
+    var channel = newMessageRecieved.channel;
 
-    if (!chat.users) return console.log("chat.users not defined");
+    if (!channel.users) return console.log("channel users not defined");
 
-    chat.users.forEach((user) => {
-      if (user._id == newMessageRecieved.sender._id) return;
+    channel.users.forEach((u) => {
+      if (u._id == newMessageRecieved.sender._id) return;
 
-      socket.in(user._id).emit("message recieved", newMessageRecieved);
+      socket.in(u._id).emit("channelmessage recieved", newMessageRecieved);
     });
   });
 

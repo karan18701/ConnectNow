@@ -15,7 +15,7 @@ const ChatStack = ({ fetchAgain }) => {
   const toast = useToast();
 
   const decryptMsg = (key, message) => {
-    return (message = CryptoJS.AES.decrypt(message, key).toString(
+    return (message = CryptoJS.AES.decrypt(message, String(key)).toString(
       CryptoJS.enc.Utf8
     ));
   };

@@ -30,7 +30,7 @@ import axios from "axios";
 
 import React, { useEffect, useState } from "react";
 import { ChatState } from "../Context/ChatProvider";
-import { ArrowBackIcon, Icon } from "@chakra-ui/icons";
+import { AddIcon, ArrowBackIcon, Icon } from "@chakra-ui/icons";
 import {
   MdAttachFile,
   MdManageAccounts,
@@ -44,9 +44,10 @@ import io from "socket.io-client";
 
 import { useHistory } from "react-router-dom";
 import UserListItem from "./UserAvatar/UserListItem";
+import ScrollableChannelMessage from "./ScrollableChannelMessage";
 
 const ENDPOINT = "http://localhost:5000";
-var socket;
+var socket, selectedChannelCompare;
 const SingleChannel = ({ fetchAgain, setFetchAgain }) => {
   const {
     selectedChannel,
@@ -57,11 +58,16 @@ const SingleChannel = ({ fetchAgain, setFetchAgain }) => {
   } = ChatState();
   const modalDisclosure = useDisclosure();
   const alertDisclosure = useDisclosure();
+  const postDisclosure = useDisclosure();
+
   const [loading, setLoading] = useState(false);
   const [selectedItem, setSelectedItem] = useState("Chats");
   const [videoCallOn, setVideoCallOn] = useState(false);
   const [socketConnected, setSocketConnected] = useState(false);
-  const [videoCallMsg, setvideoCallMsg] = useState([]);
+  const [postTitle, setPostTitle] = useState();
+  const [postMessage, setPostMessage] = useState();
+  const [message, setMessage] = useState([]);
+  const [newMessage, setNewMessage] = useState([]);
 
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [search, setSearch] = useState("");
@@ -86,25 +92,69 @@ const SingleChannel = ({ fetchAgain, setFetchAgain }) => {
 
       setLoading(true);
 
-      // const { data } = await axios.get(
-      //   `/api/message/${selectedChannel._id}`,
-      //   config
-      // );
-      // setMessages(data);
-      // console.log("decrypt data ", data);
+      const { data } = await axios.get(
+        `/api/channelmessage/${selectedChannel._id}`,
+        config
+      );
+      setMessage(data);
 
       setLoading(false);
 
-      socket.emit("join chat", selectedChannel._id);
+      socket.emit("join channel", selectedChannel._id);
     } catch (error) {
       toast({
         title: "Error Occured!",
-        description: "Failed to Load the Messages",
+        description: "Failed to Load the Post",
         status: "error",
         duration: 5000,
         isClosable: true,
         position: "bottom",
       });
+    }
+  };
+
+  const sendMessage = async (event) => {
+    // if enter key is pressed and newMessage is typed
+
+    if (event.key === "Enter" && newMessage) {
+      // socket.emit("stop typing", selectedChat._id);
+      try {
+        const config = {
+          headers: {
+            "Content-type": "application/json",
+            Authorization: `Bearer ${user.token}`,
+          },
+        };
+
+        setNewMessage("");
+        // const cipherText = CryptoJS.AES.encrypt(
+        //   newMessage,
+        //   String(selectedChannel._id)
+        // ).toString();
+        const { data } = await axios.post(
+          "/api/channelmessage",
+          {
+            content: newMessage,
+            channelId: selectedChannel,
+          },
+          config
+        );
+
+        console.log("new msgsss ", data);
+
+        socket.emit("new channelmessage", data);
+        setMessage([...message, data]);
+      } catch (error) {
+        console.log("errr", error);
+        toast({
+          title: "Error Occured!",
+          description: "Failed to send the Message",
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+          position: "bottom",
+        });
+      }
     }
   };
 
@@ -117,12 +167,10 @@ const SingleChannel = ({ fetchAgain, setFetchAgain }) => {
         },
       };
 
-      //  setNewMessage("");
-
       const { data } = await axios.post(
         "/api/channelmessage",
         {
-          content: "video call",
+          content: "Video call",
           channelId: selectedChannel,
         },
         config
@@ -131,8 +179,6 @@ const SingleChannel = ({ fetchAgain, setFetchAgain }) => {
       console.log("new msgsss ", data);
 
       socket.emit("group video", data);
-      //  setMessages([...messages, data]);
-      //  setNewMsg([...newMsg, data]);
     } catch (error) {
       toast({
         title: "Error Occured!",
@@ -161,7 +207,6 @@ const SingleChannel = ({ fetchAgain, setFetchAgain }) => {
     }
 
     try {
-      // setLoading(true);
       const config = {
         headers: {
           Authorization: `Bearer ${user.token}`,
@@ -179,8 +224,6 @@ const SingleChannel = ({ fetchAgain, setFetchAgain }) => {
       // if logged in user is admin and remove him self then we don't want that a user see a group as he left group
       user1._id === user._id ? setSelectedChannel() : setSelectedChannel(data);
       setFetchAgain(!fetchAgain);
-      // fetchMessages();
-      // setLoading(false);
     } catch (error) {
       toast({
         title: "Error Occured!",
@@ -190,9 +233,7 @@ const SingleChannel = ({ fetchAgain, setFetchAgain }) => {
         isClosable: true,
         position: "bottom",
       });
-      // setLoading(false);
     }
-    // setGroupChatName("");
   };
 
   // handle user , handleadd user and handle search for add user
@@ -210,7 +251,6 @@ const SingleChannel = ({ fetchAgain, setFetchAgain }) => {
         },
       };
       const { data } = await axios.get(`/api/user?search=${search}`, config);
-      // console.log(data);
       setLoading(false);
       setSearchResult(data);
     } catch (error) {
@@ -317,6 +357,48 @@ const SingleChannel = ({ fetchAgain, setFetchAgain }) => {
     history.push("/video-call");
   };
 
+  const createPost = async () => {
+    if (postTitle === undefined || postMessage === undefined) {
+      toast({
+        title: "Please fill all the feilds",
+        status: "warning",
+        duration: 2000,
+        isClosable: true,
+        position: "top",
+      });
+      return;
+    }
+
+    try {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+      };
+      const { data } = await axios.post(
+        `/api/channelmessage`,
+        {
+          channelId: selectedChannel._id,
+          content: postMessage,
+          title: postTitle,
+        },
+        config
+      );
+      setMessage([...message, data]);
+
+      postDisclosure.onClose();
+    } catch (error) {
+      toast({
+        title: "Error Occured",
+        description: "Failed to create the post",
+        status: "error",
+        duration: 1000,
+        isClosable: true,
+        position: "bottom",
+      });
+    }
+  };
+
   useEffect(() => {
     socket = io(ENDPOINT);
     socket.emit("setup", user);
@@ -335,9 +417,14 @@ const SingleChannel = ({ fetchAgain, setFetchAgain }) => {
   });
 
   useEffect(() => {
-    fetchMessages();
+    socket.on("channelmessage recieved", (newMessageRecieved) => {
+      setMessage([...message, newMessageRecieved]);
+    });
+  });
 
-    //  selectedChatCompare = selectedChat;
+  useEffect(() => {
+    fetchMessages();
+    selectedChannelCompare = selectedChannel;
   }, [selectedChannel]);
 
   return (
@@ -424,8 +511,8 @@ const SingleChannel = ({ fetchAgain, setFetchAgain }) => {
                 _hover={{ backgroundColor: "green", color: "#ffffff" }}
                 size={"lg"}
                 bg={videoCallOn ? "red" : "#ffffff"}
+                // bg={liveMember !== "0" ? "red" : "#ffffff"}
                 color={videoCallOn ? "white" : "black"}
-                // bg={"#ffffff"}
                 // style={videoCallOn ? colorScheme : "red"}
               >
                 Meet
@@ -471,50 +558,88 @@ const SingleChannel = ({ fetchAgain, setFetchAgain }) => {
               ) : (
                 // {/* messages */}
                 <div className="messages">
-                  {/* <ScrollableChat messages={messages} /> */}
+                  <ScrollableChannelMessage messages={message} />
                 </div>
               )}
 
               <FormControl
-                //   onKeyDown={sendMessage}
+                onKeyDown={sendMessage}
                 id="first-name"
                 isRequired
-                mt={3}
+                mt={5}
               >
-                {/* {istyping ? (
-                <div>
-                  <Lottie
-                    options={defaultOptions}
-                    height={25}
-                    width={70}
-                    style={{ marginBottom: 15, marginLeft: 0 }}
-                  />
-                </div>
-              ) : (
-                <></>
-              )} */}
                 <HStack>
+                  <Button
+                    display="flex"
+                    colorScheme="blue"
+                    fontSize={{
+                      base: "17px",
+                      md: "13px !important",
+                      lg: "17px",
+                    }}
+                    onClick={postDisclosure.onOpen}
+                    leftIcon={<AddIcon />}
+                  >
+                    New Post
+                  </Button>
                   <Input
+                    width={"85%"}
                     variant="filled"
                     bg="#E0E0E0"
                     placeholder="Enter a message..."
-                    //   onClick={handleInputClick}
-                    //   onChange={typingHandler}
-                    //   value={newMessage || transcript}
+                    onChange={(e) => {
+                      setNewMessage(e.target.value);
+                    }}
+                    value={newMessage}
                   />
 
-                  {/* <IconButton
-                  icon={<MdOutlineMic />}
-                  colorScheme="blue"
-                  variant="solid"
-                  // onClick={speechToText}
-                  //   onClick={handleButtonClick}
-                ></IconButton> */}
+                  <Modal
+                    onClose={postDisclosure.onClose}
+                    isOpen={postDisclosure.isOpen}
+                    isCentered
+                  >
+                    <ModalOverlay />
+                    <ModalContent>
+                      <ModalHeader
+                        fontSize="35px"
+                        fontFamily="Work sans"
+                        display="flex"
+                        justifyContent="center"
+                      >
+                        Create New Post
+                      </ModalHeader>
+                      <ModalCloseButton />
+                      <ModalBody
+                        display="flex"
+                        flexDir="column"
+                        alignItems="center"
+                      >
+                        <FormControl>
+                          <Input
+                            placeholder="Post Heading"
+                            mb={3}
+                            onChange={(e) => setPostTitle(e.target.value)}
+                          />
+                        </FormControl>
+                        <FormControl>
+                          <Input
+                            placeholder="Post Message"
+                            mb={1}
+                            onChange={(e) => setPostMessage(e.target.value)}
+                          />
+                        </FormControl>
+                      </ModalBody>
 
+                      <ModalFooter>
+                        <Button onClick={createPost} colorScheme="blue">
+                          Send
+                        </Button>
+                      </ModalFooter>
+                    </ModalContent>
+                  </Modal>
                   <IconButton
                     icon={<MdAttachFile />}
                     colorScheme="blue"
-                    // backgroundColor="#E0E0E0"
                     variant="solid"
                   ></IconButton>
                 </HStack>
