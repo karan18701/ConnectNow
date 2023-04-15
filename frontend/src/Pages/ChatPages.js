@@ -5,22 +5,44 @@ import SideDrawer from "../Components/miscellaneous/SideDrawer";
 import MyChats from "../Components/MyChats";
 import { ChatState } from "../Context/ChatProvider";
 import { useHistory } from "react-router-dom";
+import io from "socket.io-client";
+
+// const ENDPOINT = "http://localhost:5000";
+var socket;
 
 const ChatPages = () => {
   // taking user state from context api
   const history = useHistory();
-  const { user, setUser } = ChatState();
+  const { user, setUser, activeUsers, setActiveUsers } = ChatState();
   const [fetchAgain, setFetchAgain] = useState(false);
+
+  useEffect(() => {
+    socket = io("http://localhost:3000");
+  }, []);
+
   useEffect(() => {
     //   fetching userinfo from local storage that is logged in or signed up
     const userInfo = JSON.parse(localStorage.getItem("userInfo"));
     setUser(userInfo);
+
+    socket.emit("addUsers", userInfo);
 
     //   if user not logged in then redirect to homepage
     if (!userInfo) {
       history.push("/");
     }
   }, [history]);
+
+  window.addEventListener("beforeunload", () => {
+    // Emit a "disconnect" event to the server
+    socket.emit("disconnect");
+  });
+
+  useEffect(() => {
+    socket.on("getUsers", (users) => {
+      setActiveUsers(users);
+    });
+  }, []);
 
   return (
     <div style={{ width: "100%" }}>

@@ -40,15 +40,51 @@ app.use(notFound);
 app.use(errorHandler);
 
 const io = require("socket.io")(server, {
-  pingTimeout: 60000,
+  pingTimeout: 1000, // set ping timeout to 1 second  60000 hatu
+  pingInterval: 5000, // send a ping every 5 seconds
   cors: {
     origin: "http://localhost:3000",
     // credentials: true,
   },
 });
 
+let users = [];
+
+const addUser = (userData, socketId) => {
+  const userExists = users.find((user) => user._id === userData._id);
+
+  // console.log("user exist", userExists);
+  if (!userExists) {
+    users.push({ ...userData, socketId, online: true });
+  } else {
+    const index = users.findIndex((user) => user._id === userData._id);
+    // console.log("user exist index", index);
+
+    users[index].socketId = socketId;
+    users[index].online = true;
+  }
+
+  io.emit("getUsers", users);
+};
+
+const removeUser = (socketId) => {
+  console.log("socketId", socketId);
+  const index = users.findIndex((u) => u.socketId === socketId);
+
+  console.log("index", index);
+  if (index !== -1) {
+    users[index].online = false;
+    io.emit("getUsers", users);
+  }
+};
+
 io.on("connection", (socket) => {
   console.log("Connected to socket.io");
+
+  socket.on("addUsers", (userData) => {
+    addUser(userData, socket.id);
+    console.log("userss", users);
+  });
 
   // take user data from frontend
   socket.on("setup", (userData) => {
@@ -125,6 +161,10 @@ io.on("connection", (socket) => {
     });
   });
 
+  socket.on("disconnect", () => {
+    removeUser(socket.id);
+    console.log("removed", users);
+  });
   socket.off("setup", () => {
     console.log("USER DISCONNECTED");
     socket.leave(userData._id);

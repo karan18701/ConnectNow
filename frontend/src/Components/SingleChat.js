@@ -61,6 +61,8 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     setNotification,
     newMsg,
     setNewMsg,
+    activeUsers,
+    setActiveUsers,
   } = ChatState();
 
   const { transcript, resetTranscript, listening } = useSpeechRecognition();
@@ -277,6 +279,12 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     setNewMessage(messg);
   };
 
+  const sendStatus = () => {
+    const y = getSenderFull(user, selectedChat.users)._id;
+    const x = activeUsers?.filter((u) => u._id === y)[0];
+    console.log("y", x?.online);
+    return x?.online;
+  };
   return (
     <>
       {selectedChat ? (
@@ -330,8 +338,20 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
             {messages &&
               (!selectedChat.isGroupChat ? (
                 <>
-                  {/* oppo. user name and icon */}
-                  {getSender(user, selectedChat.users)}
+                  <Stack>
+                    {/* oppo. user name and icon */}
+                    <Box fontSize={"25px !important"}>
+                      {getSender(user, selectedChat.users)}
+                    </Box>
+                    <Box
+                      display={"flex"}
+                      justifyContent={"center"}
+                      fontSize={"12px !important"}
+                      mt={"0px !important"}
+                    >
+                      {sendStatus() ? "Online" : "Offline"}
+                    </Box>
+                  </Stack>
                   <ProfileModal
                     user={getSenderFull(user, selectedChat.users)}
                   />
