@@ -43,12 +43,23 @@ const accessChat = asyncHandler(async (req, res) => {
         lastTime: dt,
       },
     ];
+    lastseen = [
+      {
+        participant: String(req.user._id),
+        lastTime: dt,
+      },
+      {
+        participant: String(userId),
+        lastTime: dt,
+      },
+    ];
 
     var chatData = {
       chatName: "sender",
       isGroupChat: false,
       users: [req.user._id, userId],
       lastDeleted: lastdel,
+      lastSeen: lastseen,
     };
 
     try {
@@ -135,6 +146,7 @@ const createGroupChat = asyncHandler(async (req, res) => {
       users: users,
       groupAdmin: req.user,
       lastDeleted: lastDeletedMessage,
+      lastSeen: lastDeletedMessage,
     });
 
     // send back full chat to user
@@ -272,6 +284,33 @@ const deleteChat = asyncHandler(async (req, res) => {
     console.log(err);
   }
 });
+const seenChat = asyncHandler(async (req, res, next) => {
+  const { chatId } = req.body;
+  let chatID = req.params.chatId === undefined ? chatId._id : req.params.chatId;
+  const userId = req.user._id;
+  var str = String(userId);
+  var newLastTime = getDate();
+  try {
+    Chat.findByIdAndUpdate(
+      chatID,
+      { $set: { "lastSeen.$[elem].lastTime": newLastTime } },
+      {
+        arrayFilters: [{ "elem.participant": str }],
+        new: true,
+      },
+      function (err, chat) {
+        if (err) {
+          console.log(err);
+          res.status(400);
+        } else {
+          next();
+        }
+      }
+    );
+  } catch (err) {
+    console.log(err);
+  }
+});
 
 module.exports = {
   accessChat,
@@ -281,4 +320,5 @@ module.exports = {
   addToGroup,
   removeFromGroup,
   deleteChat,
+  seenChat,
 };

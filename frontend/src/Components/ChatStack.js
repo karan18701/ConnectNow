@@ -4,10 +4,6 @@ import { getSender } from "../config/ChatLogics";
 import { ChatState } from "../Context/ChatProvider";
 import CryptoJS from "crypto-js";
 import axios from "axios";
-// import io from "socket.io-client";
-
-// const ENDPOINT = "http://localhost:5000";
-// var socket;
 
 const ChatStack = ({ fetchAgain }) => {
   const { selectedChat, setSelectedChat, user, chats, setChats } = ChatState();
@@ -15,7 +11,7 @@ const ChatStack = ({ fetchAgain }) => {
   const toast = useToast();
 
   const decryptMsg = (key, message) => {
-    return (message = CryptoJS.AES.decrypt(message, String(key)).toString(
+    return (message = CryptoJS.AES.decrypt(message, key).toString(
       CryptoJS.enc.Utf8
     ));
   };
@@ -67,40 +63,61 @@ const ChatStack = ({ fetchAgain }) => {
     setLoggedUser(JSON.parse(localStorage.getItem("userInfo")));
     fetchChats();
   }, [fetchAgain]);
-
   return (
     <Stack overflowY="scroll">
-      {chats.map((chat) => (
-        <Box
-          onClick={() => setSelectedChat(chat)}
-          cursor="pointer"
-          // bg={selectedChat === chat ? "#4c6ed5" : "#E8E8E8"}
-          // color={selectedChat === chat ? "white" : "black"}
-          bg={getChatBgColor(chat)}
-          color={getChatTextColor(chat)}
-          px={3}
-          py={2}
-          borderRadius="lg"
-          key={chat._id}
-        >
-          <Text>
-            {!chat.isGroupChat
-              ? getSender(loggedUser, chat.users)
-              : chat.chatName}
-          </Text>
-          {chat.latestMessage && (
-            <Text fontSize="xs">
-              <b>{chat.latestMessage.sender.name} : </b>
-              {chat.latestMessage.content.length > 50
-                ? decryptMsg(chat._id, chat.latestMessage.content).substring(
-                    0,
-                    51
-                  ) + "..."
-                : decryptMsg(chat._id, chat.latestMessage.content)}
+      {chats.map((chat, index) => {
+        var lastSeen = "";
+        chat?.lastSeen.forEach((element) => {
+          if (element.participant === String(user._id)) {
+            lastSeen = element.lastTime;
+          }
+        });
+        return (
+          <Box
+            onClick={() => setSelectedChat(chat)}
+            cursor="pointer"
+            // bg={selectedChat === chat ? "#4c6ed5" : "#E8E8E8"}
+            // color={selectedChat === chat ? "white" : "black"}
+            bg={getChatBgColor(chat)}
+            color={getChatTextColor(chat)}
+            px={3}
+            py={2}
+            borderRadius="lg"
+            key={chat._id}
+          >
+            <Text>
+              {!chat.isGroupChat
+                ? getSender(loggedUser, chat.users)
+                : chat.chatName}
             </Text>
-          )}
-        </Box>
-      ))}
+            {chat.latestMessage && (
+              <Text fontSize="xs">
+                <Text
+                  fontWeight={
+                    lastSeen < chat?.latestMessage?.time ? "bold" : "normal"
+                  }
+                  display={"inline"}
+                >
+                  {chat.latestMessage.sender.name} :{" "}
+                </Text>
+                <Text
+                  fontWeight={
+                    lastSeen < chat?.latestMessage?.time ? "bold" : "normal"
+                  }
+                  display={"inline"}
+                >
+                  {chat.latestMessage.content.length > 50
+                    ? decryptMsg(
+                        chat._id,
+                        chat.latestMessage.content
+                      ).substring(0, 51) + "..."
+                    : decryptMsg(chat._id, chat.latestMessage.content)}
+                </Text>
+              </Text>
+            )}
+          </Box>
+        );
+      })}
     </Stack>
   );
 };

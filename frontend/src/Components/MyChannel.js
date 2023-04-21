@@ -81,7 +81,7 @@ const MyChannel = ({ fetchAgain }) => {
           <Box
             pb={3}
             px={3}
-            fontSize={{ base: "28px", md: "25px" }}
+            fontSize={{ base: "28px", md: "30px" }}
             fontFamily="Work sans"
             display="flex"
             w="100%"
@@ -98,10 +98,10 @@ const MyChannel = ({ fetchAgain }) => {
                 <BellIcon fontSize="2xl" m="1" />
               </MenuButton>
               {/* if notification lengh is 0 then display no new notification */}
-              <MenuList pl={4}>
+              <MenuList pl={10}>
                 {/* {!notification.length && "No new Messages"} */}
 
-                {/* {!notification.length && "No New Messages"} */}
+                {!channelNotification.length && "No New Notification"}
                 {channelNotification.map((notif) => (
                   <MenuItem
                     key={notif._id}

@@ -2,9 +2,12 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useHistory } from "react-router-dom";
+import io from "socket.io-client";
 
 // creating context
 const ChatContext = createContext();
+const ENDPOINT = "http://localhost:5000";
+var socket = io(ENDPOINT);
 
 // provide the value that need to use direct in diff pages
 const ChatProvider = ({ children }) => {
@@ -14,16 +17,15 @@ const ChatProvider = ({ children }) => {
   const [channelNotification, setChannelNotification] = useState([]);
   const [chats, setChats] = useState();
   const [channels, setChannels] = useState();
-
+  const [socketConnected, setSocketConnected] = useState(false);
   // for displaying lastest msg on chat box to do
   const [newMsg, setNewMsg] = useState([]);
-  const [activeUsers, setActiveUsers] = useState([]);
-
   const [selectedItem, setSelectedItem] = useState("Chats");
   const [selectedChannel, setSelectedChannel] = useState();
-
+  const [verifiedEmail, setVerifiedEmail] = useState();
+  const [activeUsers, setActiveUsers] = useState([]);
   const history = useHistory();
-
+  useEffect(() => {}, []);
   useEffect(() => {
     //   fetching userinfo from local storage that is logged in or signed up
     const userInfo = JSON.parse(localStorage.getItem("userInfo"));
@@ -32,14 +34,22 @@ const ChatProvider = ({ children }) => {
     //   if user not logged in then redirect to homepage
     if (!userInfo) {
       let pathName = url.split("/");
+
       let path = pathName[3];
-      console.log(" path ", path);
       if (path === "reset-password") {
         path += "/" + pathName[4] + "/" + pathName[5];
         history.push(`/${path}`);
-      } else history.push("/");
+      } else if (pathName.pop() != "verify") {
+        history.push("/");
+      }
+    } else {
+      socket.emit("setup", userInfo);
+      socket.on("connected", () => {
+        setSocketConnected(true);
+      });
     }
   }, [history]);
+
   return (
     <ChatContext.Provider
       value={{
@@ -61,6 +71,9 @@ const ChatProvider = ({ children }) => {
         setChannels,
         channelNotification,
         setChannelNotification,
+        verifiedEmail,
+        setVerifiedEmail,
+        socket,
         activeUsers,
         setActiveUsers,
       }}

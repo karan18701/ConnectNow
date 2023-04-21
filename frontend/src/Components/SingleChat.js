@@ -1,4 +1,4 @@
-import { ArrowBackIcon, Icon } from "@chakra-ui/icons";
+import { ArrowBackIcon, Icon, InfoIcon } from "@chakra-ui/icons";
 import { FormControl } from "@chakra-ui/form-control";
 import { Input } from "@chakra-ui/input";
 import { Box, Text, Stack, HStack } from "@chakra-ui/layout";
@@ -29,17 +29,21 @@ import Picker from "emoji-picker-react";
 
 import { BsEmojiSmileFill } from "react-icons/bs";
 
-import io from "socket.io-client";
 import UpdateGroupChatModal from "./miscellaneous/UpdateGroupChatModal";
 import { ChatState } from "../Context/ChatProvider";
-import { MdCall, MdOutlineMic, MdAttachFile, MdDelete } from "react-icons/md";
+import {
+  MdCall,
+  MdOutlineMic,
+  MdAttachFile,
+  MdDelete,
+  MdAlbum,
+} from "react-icons/md";
 import { useHistory } from "react-router-dom";
 import SpeechRecognition, {
   useSpeechRecognition,
 } from "react-speech-recognition";
 
-const ENDPOINT = "http://localhost:5000";
-var socket, selectedChatCompare;
+var selectedChatCompare;
 
 const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const inputRef = useRef();
@@ -47,12 +51,15 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const [loading, setLoading] = useState(false);
   const [videoCallOn, setVideoCallOn] = useState(false);
   const [newMessage, setNewMessage] = useState("");
-  const [socketConnected, setSocketConnected] = useState(false);
+  const [status, setStatus] = useState(false);
   const [typing, setTyping] = useState(false);
   const [istyping, setIsTyping] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
-
+  const [file, setFile] = useState("");
+  const [url, setUrl] = useState("");
+  const [activeUser, setActiveUser] = useState({});
+  const fileInputRef = useRef();
   const {
     selectedChat,
     setSelectedChat,
@@ -62,7 +69,8 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     newMsg,
     setNewMsg,
     activeUsers,
-    setActiveUsers,
+    socket,
+    socketConnected,
   } = ChatState();
 
   const { transcript, resetTranscript, listening } = useSpeechRecognition();
@@ -97,7 +105,6 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       };
 
       setLoading(true);
-
       const { data } = await axios.get(
         `/api/message/${selectedChat._id}`,
         config
@@ -122,8 +129,11 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
   const sendMessage = async (event) => {
     // if enter key is pressed and newMessage is typed
-
-    if (event.key === "Enter" && newMessage) {
+    // if (transcript) {
+    //   setNewMessage(transcript);
+    //   // resetTranscript;
+    // }
+    if (event.key === "Enter" && newMessage && !file) {
       socket.emit("stop typing", selectedChat._id);
       try {
         const config = {
@@ -143,11 +153,51 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
           {
             content: cipherText,
             chatId: selectedChat,
+            type: "text",
+            url: "",
           },
           config
         );
 
-        console.log("new msgsss ", data);
+        socket.emit("new message", data);
+        setMessages([...messages, data]);
+        setNewMsg([...newMsg, data]);
+      } catch (error) {
+        toast({
+          title: "Error Occured!",
+          description: "Failed to send the Message",
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+          position: "bottom",
+        });
+      }
+    } else if (event.key === "Enter" && newMessage && file) {
+      try {
+        const config = {
+          headers: {
+            "Content-type": "application/json",
+            Authorization: `Bearer ${user.token}`,
+          },
+        };
+
+        setNewMessage("");
+        // setFile("");
+        setUrl("");
+        const cipherText = CryptoJS.AES.encrypt(
+          newMessage,
+          String(selectedChat._id)
+        ).toString();
+        const { data } = await axios.post(
+          "/api/message",
+          {
+            content: cipherText,
+            chatId: selectedChat,
+            type: "file",
+            url: String(url),
+          },
+          config
+        );
 
         socket.emit("new message", data);
         setMessages([...messages, data]);
@@ -182,12 +232,12 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   };
 
   useEffect(() => {
-    socket = io(ENDPOINT);
-    socket.emit("setup", user);
-    socket.on("connected", () => setSocketConnected(true));
     socket.on("typing", () => setIsTyping(true));
     socket.on("stop typing", () => setIsTyping(false));
-    socket.on("show calling", () => setVideoCallOn(true));
+    socket.on("show calling", () => {
+      setVideoCallOn(true);
+    });
+    // socket.on("show members of video",(nums)=>{console.log(nums);})
   }, []);
 
   useEffect(() => {
@@ -268,6 +318,40 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     }, timerLength);
   };
 
+  const uploadFile = async (data) => {
+    try {
+      const config = {
+        headers: {
+          "Content-type": "FormData",
+          Authorization: `Bearer ${user.token}`,
+        },
+      };
+
+      console.log("Files here", data);
+      const response = await axios.post(
+        `api/message/uploadFile/${selectedChat._id}`,
+        data,
+        config
+      );
+      return response.data;
+    } catch (error) {
+      console.log("Error while calling the API ", error.message);
+    }
+  };
+  useEffect(() => {
+    const getImage = async () => {
+      if (file) {
+        const data = new FormData();
+        data.append("name", file.name);
+        data.append("file", file);
+        const response = await uploadFile(data);
+        setUrl(response);
+      }
+    };
+    getImage();
+    console.log();
+  }, [file]);
+
   const handleEmojiPickerHideShow = () => {
     setShowEmojiPicker(!showEmojiPicker);
   };
@@ -278,11 +362,10 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     messg += emoji.emoji;
     setNewMessage(messg);
   };
-
+  useEffect(() => {}, [inputRef]);
   const sendStatus = () => {
     const y = getSenderFull(user, selectedChat.users)._id;
     const x = activeUsers?.filter((u) => u._id === y)[0];
-    console.log("y", x?.online);
     return x?.online;
   };
   return (
@@ -311,7 +394,6 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                 icon={<MdDelete />}
                 // fontSize="25px"
                 onClick={onOpen}
-                // colorScheme={"whatsapp"}
                 ml={{ md: "0px!important" }}
               />
               <AlertDialog isOpen={isOpen} onClose={onClose} isCentered>
@@ -338,6 +420,17 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
             {messages &&
               (!selectedChat.isGroupChat ? (
                 <>
+                  {/* oppo. user name and icon */}
+                  {/* {getSender(user, selectedChat.users)} */}
+                  {/* {(activeUser && !selectedChat.isGroupChat)&&(<IconButton
+                icon={<MdAlbum />}
+                fontSize="20px"
+                size={"m"}
+               
+                variant={"ghost"}
+                colorScheme={activeUser && !selectedChat.isGroupChat ?"whatsapp":"red"}
+                ml={{ md: "0px!important" }}
+              />)} */}
                   <Stack>
                     {/* oppo. user name and icon */}
                     <Box fontSize={"25px !important"}>
@@ -360,6 +453,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                 <>
                   {/* group name */}
                   {selectedChat.chatName.toUpperCase()}
+
                   <div style={{ display: "flex", flexDirection: "row" }}>
                     {/* <IconButton
                       icon={<MdCall />}
@@ -367,7 +461,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                       variant="solid"
                       w={"8px"}
                       mr={"10px"}
-                      onClick={startVideoCall}
+                      // onClick={startVideoCall}
                     ></IconButton> */}
 
                     <UpdateGroupChatModal
@@ -465,9 +559,19 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                 <IconButton
                   icon={<MdAttachFile />}
                   colorScheme="blue"
-                  // backgroundColor="#E0E0E0"
+                  onClick={() => fileInputRef.current.click()}
                   variant="solid"
                 ></IconButton>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  style={{ display: "none" }}
+                  onChange={(e) => {
+                    console.log(e.target.files[0]);
+                    setFile(e.target.files[0]);
+                    setNewMessage(e.target.files[0]?.name);
+                  }}
+                />
               </HStack>
             </FormControl>
           </Box>

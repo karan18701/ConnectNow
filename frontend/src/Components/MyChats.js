@@ -6,8 +6,9 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import ChatLoading from "./ChatLoading";
 import GroupChatModal from "./miscellaneous/GroupChatModal";
-import { Button } from "@chakra-ui/react";
+import { Stack, IconButton, Tooltip } from "@chakra-ui/react";
 import { ChatState } from "../Context/ChatProvider";
+import Notification from "./miscellaneous/Notification";
 
 // import CryptoJS from "crypto-js";
 import ChatStack from "./ChatStack";
@@ -57,34 +58,46 @@ const MyChats = ({ fetchAgain }) => {
     <Box
       display={{ base: selectedChat ? "none" : "flex", md: "flex" }}
       flexDir="column"
-      alignItems="center"
+      // alignItems="center"
       p={3}
       bg="white"
-      w={{ base: "100%", md: "31%" }}
+      w={{ base: "100%", md: "28%" }}
       // borderRadius="lg"
       borderWidth="1px"
     >
-      <Box
-        pb={3}
-        px={3}
-        fontSize={{ base: "28px", md: "30px" }}
-        fontFamily="Work sans"
-        display="flex"
-        w="100%"
-        justifyContent="space-between"
-        alignItems="center"
-      >
-        My Chats
-        <GroupChatModal>
-          <Button
-            display="flex"
-            fontSize={{ base: "17px", md: "10px", lg: "17px" }}
-            rightIcon={<AddIcon />}
+      <Box justifyContent={"space-between"}>
+        <Stack
+          direction={"row"}
+          justifyContent={"space-between"}
+          // display={"flex"}
+        >
+          <Box
+            pb={3}
+            px={3}
+            fontSize={{ base: "28px", md: "30px" }}
+            fontFamily="Work sans"
+            w="100%"
+            justifyContent="space-between"
+            alignItems="center"
+            marginRight={16}
           >
-            New Group Chat
-          </Button>
-        </GroupChatModal>
+            My Chats
+          </Box>
+          <Box display="flex" marginLeft={9}>
+            <GroupChatModal>
+              <Tooltip label="New Group Chat" hasArrow placement="bottom-end">
+                <IconButton
+                  display="flex"
+                  fontSize={{ base: "10px", md: "10px", lg: "17px" }}
+                  icon={<AddIcon />}
+                ></IconButton>
+              </Tooltip>
+            </GroupChatModal>
+            <Notification />
+          </Box>
+        </Stack>
       </Box>
+
       <Box
         display="flex"
         flexDir="column"

@@ -4,55 +4,130 @@ const User = require("../models/userModel");
 const nodemailer = require("nodemailer");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-
+const UserOTP = require("../models/userOtpModel");
 // asyncHandler is used for handle any error that occurs in this controller
 const registerUser = asyncHandler(async (req, res) => {
-  // this value is taken from frontend so tell the server(server.js) to accpt json data
-  const { name, email, password, pic } = req.body;
+  const { name, email, password, pic, re } = req.body;
+  let resend = re - "0";
 
-  // check whether all entries are filled or not
-  if (!name || !email || !password) {
+  if (!resend && (!name || !email || !password)) {
     res.status(400);
-    throw new Error("Please enter all the feilds");
+    throw new Error("Please enter all the fields");
   }
 
-  // check if userExist or not
-  const userExist = await User.findOne({ email });
+  let userExist = await User.findOne({ email });
 
-  if (userExist) {
+  if (userExist && !resend) {
     res.status(400);
     throw new Error("User already exists");
   }
 
-  const user = await User.create({
-    name,
-    email,
-    password,
-    pic,
+  // Generate a random verification code
+  const verificationCode = Math.floor(100000 + Math.random() * 900000);
+
+  // Create a new user object and set the verified field to false
+  if (!resend || !userExist) {
+    const user = await User.create({
+      name,
+      email,
+      password,
+      pic,
+      verified: false,
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    });
+    userExist = user;
+  }
+
+  // Send an email to the user with the verification code
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: "rahulpatelrahul1425@gmail.com",
+      pass: "pjbpfpecjtglnimj",
+    },
   });
 
-  // jwt helps to authorize user in backend
-  if (user) {
-    // sucess
-    res.status(201).json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      pic: user.pic,
-      token: generateToken.generateToken(user._id),
+  const mailOptions = {
+    from: "youremail@gmail.com",
+    to: userExist.email,
+    subject: "Email Verification Code from ConnectNow",
+    text: `Your verification code is: ${verificationCode}`,
+  };
+
+  transporter.sendMail(mailOptions, function (error, info) {
+    if (error) {
+      console.log(error);
+    } else {
+      console.log("Email sent: " + info.response);
+      console.log(verificationCode);
+    }
+  });
+  if (!resend) {
+    await UserOTP.create({
+      userId: userExist._id,
+      otp: verificationCode,
+      createdAt: Date.now(),
+      expiredAt: Date.now() + 3600000,
     });
   } else {
-    throw new Error("Failed to create new User");
+    var id = userExist._id;
+    await UserOTP.findOneAndUpdate(
+      { userId: id },
+      { otp: verificationCode }
+    ).catch((err) => console.log(err));
   }
-});
 
+  res.status(201).json({
+    _id: userExist._id,
+    name: userExist.name,
+    email: userExist.email,
+    pic: userExist.pic,
+    token: generateToken(userExist._id),
+    message:
+      "A verification code has been sent to your email" + `${verificationCode}`,
+  });
+});
+const verifyEmail = asyncHandler(async (req, res) => {
+  const { verifiedEmail, code } = req.body;
+  let email = verifiedEmail;
+  // console.log(code)
+  const user = await User.findOne({ email: verifiedEmail });
+  console.log(user);
+  var id = user._id;
+
+  const otp = await UserOTP.findOne({ userId: id });
+  console.log(otp.otp);
+  if (!user) {
+    res.status(400);
+    throw new Error("User not found");
+  }
+
+  if (user.verified) {
+    res.status(400);
+    throw new Error("Email already verified");
+  }
+
+  if (String(otp.otp) == String(code)) {
+    // clear the verification code
+    console.log("VErified");
+    await User.findOneAndUpdate(id, { verified: true }).catch((err) =>
+      console.log(err)
+    );
+    res.status(200).json({ status: "verified" });
+  } else {
+    console.log(otp.otp, code);
+    res.status(400);
+    throw new Error("Invalid verification code");
+  }
+
+  // Update the user object to set verified to true
+});
 // user authentication
 const authUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
   // find email in database
   const user = await User.findOne({ email });
-
   // if email found in db then match password and if both are same then return json data
   if (user && (await user.matchPassword(password))) {
     res.json({
@@ -61,6 +136,8 @@ const authUser = asyncHandler(async (req, res) => {
       email: user.email,
       pic: user.pic,
       token: generateToken.generateToken(user._id),
+      verified: user.verified,
+      timeZone: user.timeZone,
     });
   } else {
     res.status(401);
@@ -319,4 +396,5 @@ module.exports = {
   deleteProfilePicture,
   verifyPassword,
   updatePassword,
+  verifyEmail,
 };

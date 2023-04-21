@@ -1,6 +1,5 @@
 const express = require("express");
 const dotenv = require("dotenv");
-const { chats } = require("./data/data");
 const connectDB = require("./config/db");
 const colors = require("colors");
 const userRoutes = require("./routes/userRoutes");
@@ -8,7 +7,7 @@ const chatRoutes = require("./routes/chatRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 const channelRoutes = require("./routes/channelRoutes");
 const channelMessageRoutes = require("./routes/channelMessageRoutes");
-
+const cors = require("cors");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 
 // express app
@@ -16,6 +15,7 @@ const app = express();
 //use of dotenv
 dotenv.config();
 connectDB();
+app.use(cors());
 
 app.use(express.json()); //to accept json data
 
@@ -40,16 +40,15 @@ app.use(notFound);
 app.use(errorHandler);
 
 const io = require("socket.io")(server, {
-  pingTimeout: 1000, // set ping timeout to 1 second  60000 hatu
-  pingInterval: 5000, // send a ping every 5 seconds
+  pingTimeout: 1000,
+  pingInterval: 5000,
   cors: {
     origin: "http://localhost:3000",
     // credentials: true,
   },
 });
-
+let rooms = {};
 let users = [];
-
 const addUser = (userData, socketId) => {
   const userExists = users.find((user) => user._id === userData._id);
 
@@ -77,47 +76,48 @@ const removeUser = (socketId) => {
     io.emit("getUsers", users);
   }
 };
-
 io.on("connection", (socket) => {
-  console.log("Connected to socket.io");
-
-  socket.on("addUsers", (userData) => {
-    addUser(userData, socket.id);
-    console.log("userss", users);
-  });
-
+  // console.log("Connected to socket.io");
   // take user data from frontend
   socket.on("setup", (userData) => {
     socket.join(userData._id);
     socket.emit("connected");
   });
+  socket.on("addUsers", (userData) => {
+    addUser(userData, socket.id);
+    // console.log("userss", users);
+  });
 
   // join a chat
   socket.on("join chat", (room) => {
     socket.join(room);
-    console.log("User Joined Room: " + room);
   });
 
   socket.on("typing", (room) => socket.in(room).emit("typing"));
 
-  socket.on("stop typing", (room) => socket.in(room).emit("stop typing"));
-
-  socket.on("new message", (newMessageRecieved) => {
-    var chat = newMessageRecieved.chat;
-
-    if (!chat.users) return console.log("chat.users not defined");
-
-    chat.users.forEach((user) => {
-      if (user._id == newMessageRecieved.sender._id) return;
-
-      socket.in(user._id).emit("message recieved", newMessageRecieved);
-    });
-  });
-
-  socket.on("join video", (room, name) => {
+  socket.on("join video", (room, name, id) => {
+    console.log(room, name, id);
     socket.join(room);
+    if (!(room in rooms)) {
+      rooms[room] = { count: 1, organizer: name, org_id: id };
+    } else {
+      rooms[room].count += 1;
+    }
 
+    console.log("rooms");
+    console.log(rooms);
     console.log(name + "User Joined Video Room: " + room);
+  });
+  socket.on("getOrganizerName", (room) => {
+    socket.emit("organizerName", rooms[room]?.organizer, rooms[room]?.org_id);
+  });
+  socket.on("leave video", (room) => {
+    rooms[room].count -= 1;
+    // console.log(rooms)
+  });
+  socket.on("isVideoOn", (room) => {
+    // console.log("Video is On",rooms)
+    socket.emit("VideoOn", rooms[room] != undefined && rooms[room].count > 0);
   });
 
   socket.on("show calling", (room, user, channel) => {
@@ -143,12 +143,10 @@ io.on("connection", (socket) => {
       socket.in(u._id).emit("group video recieved", newChannelMessage);
     });
   });
-
   socket.on("join channel", (room) => {
     socket.join(room);
     console.log("User Joined Channel: " + room);
   });
-
   socket.on("new channelmessage", (newMessageRecieved) => {
     var channel = newMessageRecieved.channel;
 
@@ -161,12 +159,28 @@ io.on("connection", (socket) => {
     });
   });
 
+  socket.on("stop typing", (room) => socket.in(room).emit("stop typing"));
+
+  socket.on("new message", (newMessageRecieved) => {
+    var chat = newMessageRecieved.chat;
+
+    if (!chat.users) return console.log("chat.users not defined");
+
+    chat.users.forEach((user) => {
+      if (user._id == newMessageRecieved.sender._id) return;
+
+      socket.in(user._id).emit("message recieved", newMessageRecieved);
+    });
+  });
+
   socket.on("disconnect", () => {
     removeUser(socket.id);
     console.log("removed", users);
   });
+
   socket.off("setup", () => {
     console.log("USER DISCONNECTED");
     socket.leave(userData._id);
+    activeUsers.delete(String(userData._id));
   });
 });

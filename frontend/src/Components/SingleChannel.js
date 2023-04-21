@@ -40,14 +40,12 @@ import {
 import { FaBloggerB } from "react-icons/fa";
 import { TiDelete } from "react-icons/ti";
 import { RiDeleteBin6Fill } from "react-icons/ri";
-import io from "socket.io-client";
 
 import { useHistory } from "react-router-dom";
 import UserListItem from "./UserAvatar/UserListItem";
 import ScrollableChannelMessage from "./ScrollableChannelMessage";
 
-const ENDPOINT = "http://localhost:5000";
-var socket, selectedChannelCompare;
+var selectedChannelCompare;
 const SingleChannel = ({ fetchAgain, setFetchAgain }) => {
   const {
     selectedChannel,
@@ -55,6 +53,7 @@ const SingleChannel = ({ fetchAgain, setFetchAgain }) => {
     user,
     channelNotification,
     setChannelNotification,
+    socket,
   } = ChatState();
   const modalDisclosure = useDisclosure();
   const alertDisclosure = useDisclosure();
@@ -79,7 +78,11 @@ const SingleChannel = ({ fetchAgain, setFetchAgain }) => {
   const handleClick = (component) => {
     setSelectedItem(component);
   };
-
+  useEffect(() => {
+    console.log(selectedChannel);
+    socket.emit("isVideoOn", selectedChannel?._id);
+    socket.on("VideoOn", (res) => setVideoCallOn(res));
+  }, [selectedChannel]);
   const fetchMessages = async () => {
     if (!selectedChannel) return;
 
@@ -345,7 +348,7 @@ const SingleChannel = ({ fetchAgain, setFetchAgain }) => {
   };
 
   const startVideoCall = async () => {
-    socket.emit("join video", selectedChannel._id, user.name);
+    socket.emit("join video", selectedChannel._id, user.name, user._id);
     if (!videoCallOn) {
       socket.emit(
         "show calling",
@@ -403,7 +406,6 @@ const SingleChannel = ({ fetchAgain, setFetchAgain }) => {
   };
 
   useEffect(() => {
-    socket = io(ENDPOINT);
     socket.emit("setup", user);
 
     socket.on("connected", () => setSocketConnected(true));

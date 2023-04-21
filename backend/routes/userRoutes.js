@@ -10,6 +10,7 @@ const {
   deleteProfilePicture,
   verifyPassword,
   updatePassword,
+  verifyEmail,
 } = require("../controller/userController");
 const { protect } = require("../middleware/authMiddleware");
 
@@ -24,5 +25,6 @@ router.post("/update-user", updateUser);
 router.post("/remove-pic", deleteProfilePicture);
 router.get("/verify-password/:id/:password", verifyPassword);
 router.post("/update-password", updatePassword);
+router.route("/verify").post(verifyEmail);
 
 module.exports = router;
