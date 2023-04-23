@@ -13,6 +13,7 @@ const userSchema = mongoose.Schema(
     },
     verified: { type: Boolean },
     timeZone: { type: String },
+    notification: { type: Array, default: [] },
   },
   { timestamps: true }
 );

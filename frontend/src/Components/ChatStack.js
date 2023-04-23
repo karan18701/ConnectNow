@@ -1,5 +1,5 @@
 import { Box, Stack, Text, useToast } from "@chakra-ui/react";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { getSender } from "../config/ChatLogics";
 import { ChatState } from "../Context/ChatProvider";
 import CryptoJS from "crypto-js";
@@ -9,6 +9,7 @@ const ChatStack = ({ fetchAgain }) => {
   const { selectedChat, setSelectedChat, user, chats, setChats } = ChatState();
   const [loggedUser, setLoggedUser] = useState();
   const toast = useToast();
+  const refs = useRef([]);
 
   const decryptMsg = (key, message) => {
     return (message = CryptoJS.AES.decrypt(message, key).toString(
@@ -63,6 +64,11 @@ const ChatStack = ({ fetchAgain }) => {
     setLoggedUser(JSON.parse(localStorage.getItem("userInfo")));
     fetchChats();
   }, [fetchAgain]);
+  const testClick = (index) => {
+    var arr = refs.current[index].querySelectorAll("p");
+    arr[2].style.fontWeight = "normal";
+    arr[3].style.fontWeight = "normal";
+  };
   return (
     <Stack overflowY="scroll">
       {chats.map((chat, index) => {
@@ -74,7 +80,11 @@ const ChatStack = ({ fetchAgain }) => {
         });
         return (
           <Box
-            onClick={() => setSelectedChat(chat)}
+            ref={(el) => (refs.current[index] = el)}
+            onClick={() => {
+              setSelectedChat(chat);
+              testClick(index);
+            }}
             cursor="pointer"
             // bg={selectedChat === chat ? "#4c6ed5" : "#E8E8E8"}
             // color={selectedChat === chat ? "white" : "black"}

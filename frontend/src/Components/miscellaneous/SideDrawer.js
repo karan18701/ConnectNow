@@ -26,7 +26,14 @@ function SideDrawer() {
   const [loading, setLoading] = useState(false);
   const [loadingChat, setLoadingChat] = useState(false);
 
-  const { setSelectedChat, user, chats, setChats } = ChatState();
+  const {
+    setSelectedChat,
+    user,
+    chats,
+    setChats,
+    selectedItem,
+    setSelectedItem,
+  } = ChatState();
   const toast = useToast();
 
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -71,6 +78,7 @@ function SideDrawer() {
   const accessChat = async (userId) => {
     console.log(userId);
 
+    setSelectedItem("Chats");
     try {
       setLoadingChat(true);
       const config = {

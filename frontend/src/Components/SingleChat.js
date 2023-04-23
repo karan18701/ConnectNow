@@ -244,6 +244,9 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     fetchMessages();
 
     selectedChatCompare = selectedChat;
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
   }, [selectedChat]);
 
   useEffect(() => {
