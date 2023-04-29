@@ -10,6 +10,7 @@ const channelMessageRoutes = require("./routes/channelMessageRoutes");
 const cors = require("cors");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 const { storeNotifiactions } = require("./controller/userController");
+const getDate = require("./config/getDate");
 // express app
 const app = express();
 //use of dotenv
@@ -69,7 +70,9 @@ const removeUser = (socketId) => {
   const index = users.findIndex((u) => u.socketId === socketId);
   if (index !== -1) {
     users[index].online = false;
+    users[index].lasttime = getDate();
     candies.delete(users[index]._id);
+    console.log(users);
     io.emit("getUsers", users);
   }
 };

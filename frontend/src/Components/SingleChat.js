@@ -26,6 +26,7 @@ import Lottie from "react-lottie";
 import animationData from "../animations/typing.json";
 import CryptoJS from "crypto-js";
 import Picker from "emoji-picker-react";
+import moment from "moment-timezone";
 
 import { BsEmojiSmileFill } from "react-icons/bs";
 
@@ -244,9 +245,6 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     fetchMessages();
 
     selectedChatCompare = selectedChat;
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
   }, [selectedChat]);
 
   useEffect(() => {
@@ -264,6 +262,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
           setFetchAgain(!fetchAgain);
         }
       } else {
+        setNewMsg([...messages, newMessageRecieved]);
         setMessages([...messages, newMessageRecieved]);
       }
     });
@@ -371,6 +370,41 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     const x = activeUsers?.filter((u) => u._id === y)[0];
     return x?.online;
   };
+  const getLastSeen = () => {
+    const y = getSenderFull(user, selectedChat.users)._id;
+    const x = activeUsers?.filter((u) => u._id === y)[0];
+    return x?.lasttime;
+  };
+  const actualDate = (Datetime) => {
+    if (!Datetime) return "";
+    let date_ob = new Date(Datetime);
+    const date = new Date();
+    const offset = -moment.tz(date, user.timeZone).utcOffset();
+
+    // const options = { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone };
+    date_ob.setMinutes(date_ob.getMinutes() - offset);
+
+    let day = ("0" + date_ob.getDate()).slice(-2);
+
+    // // current month
+    let month = ("0" + (date_ob.getMonth() + 1)).slice(-2);
+
+    // // current year
+    let year = date_ob.getFullYear();
+
+    // // current hours
+    let hours = ("0" + date_ob.getHours()).slice(-2);
+
+    // // current minutes
+    let minutes = ("0" + date_ob.getMinutes()).slice(-2);
+
+    // // current seconds
+
+    // DD/MM/YYYY HH:MM
+    let curr = day + "/" + month + "/" + year + " " + hours + ":" + minutes;
+    // console.log(date_ob)
+    return "Last Seen At : " + curr;
+  };
   return (
     <>
       {selectedChat ? (
@@ -445,7 +479,9 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                       fontSize={"12px !important"}
                       mt={"0px !important"}
                     >
-                      {sendStatus() ? "Online" : "Offline"}
+                      {sendStatus()
+                        ? "Online"
+                        : `Offline ${actualDate(getLastSeen())}`}
                     </Box>
                   </Stack>
                   <ProfileModal
@@ -458,15 +494,6 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                   {selectedChat.chatName.toUpperCase()}
 
                   <div style={{ display: "flex", flexDirection: "row" }}>
-                    {/* <IconButton
-                      icon={<MdCall />}
-                      colorScheme={videoCallOn ? "green" : "red"}
-                      variant="solid"
-                      w={"8px"}
-                      mr={"10px"}
-                      // onClick={startVideoCall}
-                    ></IconButton> */}
-
                     <UpdateGroupChatModal
                       fetchMessages={fetchMessages}
                       fetchAgain={fetchAgain}
