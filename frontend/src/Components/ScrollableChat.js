@@ -16,7 +16,7 @@ import moment from "moment-timezone";
 
 const icons = {
   pdf: "https://cdn4.iconfinder.com/data/icons/logos-and-brands/512/27_Pdf_File_Type_Adobe_logo_logos-512.png",
-  png: "https://thenounproject.com/api/private/icons/212328/edit/?backgroundShape=SQUARE&backgroundShapeColor=%23000000&backgroundShapeOpacity=0&exportSize=752&flipX=false&flipY=false&foregroundColor=%23000000&foregroundOpacity=1&imageFormat=png&rotation=0&token=gAAAAABkL-ishbtD-BAl2Ufeu258ij8Ma1EOZJB0HXEbs8KGgWBe3ESYUErhoB7Q_g_splqDn9MQIVDGaZKbS4qZrN2aj1p4GQ%3D%3D",
+  png: "http://res.cloudinary.com/dm37epkmg/image/upload/v1682352248/mrpplsigtcawj2xeko5m.png",
 };
 const getUTCTime = () => {
   const now = new Date();
@@ -212,7 +212,7 @@ const ScrollableChat = ({ messages }) => {
                     borderRadius: "10px",
                     padding: "1px 10px",
                     width: "270px",
-                    height: "89px",
+                    height: "auto",
                     maxWidth: "75%",
                     display: "flex",
                     flexDirection: "column",
@@ -238,7 +238,7 @@ const ScrollableChat = ({ messages }) => {
                       src={icons[m.url.split(".").pop()]}
                       style={{
                         height: 50,
-                        width: 80,
+                        width: 50,
                         marginLeft: "0",
                         display: "block",
                         objectFit: "cover",

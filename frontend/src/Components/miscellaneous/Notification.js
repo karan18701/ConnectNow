@@ -45,7 +45,7 @@ const Notification = () => {
       <Menu>
         <MenuButton p="1">
           <NotificationBadge
-            count={notification.length}
+            count={notification?.length}
             effect={Effect.SCALE}
           />
           <BellIcon fontSize="2xl" m="1" />
@@ -54,8 +54,8 @@ const Notification = () => {
         <MenuList pl={10}>
           {/* {!notification.length && "No new Messages"} */}
 
-          {!notification.length && "No New Messages"}
-          {notification.map((notif) => (
+          {!notification?.length && "No New Messages"}
+          {notification?.map((notif) => (
             <MenuItem
               key={notif._id}
               onClick={() => {

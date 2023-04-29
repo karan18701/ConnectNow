@@ -363,8 +363,11 @@ const getUser = asyncHandler(async (req, res) => {
 
 const verifyPassword = asyncHandler(async (req, res) => {
   const { id, password } = req.params;
-  const user = await User.findOne({ id });
-  if (!(user && (await user.matchPassword(password)))) {
+  const user1 = await User.findOne({ _id: id });
+  // console.log("user", id);
+  // console.log("user", user1);
+
+  if (!(user1 && (await user1.matchPassword(password)))) {
     // res.status(401);
 
     // throw new Error("Old Password is not correct!!");
